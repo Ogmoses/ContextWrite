@@ -15,7 +15,7 @@ export default async function Dash() {
   });
   return <>
     <h1>Your writing</h1>
-    <p><Link href="/write"><button className="primary">Start something new</button></Link> <Link href="/voice">Your voice</Link> · <Link href="/settings">AI settings</Link></p>
+    <p><Link href="/write"><button>Start something new</button></Link> <Link href="/voice">Your voice</Link> · <Link href="/settings">AI settings</Link></p>
     <h2>Templates</h2>
     <p>{T.map((t) => <Link key={t} href={`/write?t=${encodeURIComponent(t)}`} style={{ marginRight: 12, display: "inline-block" }}>{t}</Link>)}</p>
     <h2>Recent projects</h2>
