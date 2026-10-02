@@ -27,11 +27,11 @@ export default function Voice() {
     <textarea aria-label="Writing sample" placeholder="Paste a sample (80+ characters)" value={cur} onChange={(e) => setCur(e.target.value)} style={{ width: "100%", minHeight: 120 }} />
     <p><small>{samples.length} sample(s) added. More varied samples give a better profile; 3 or more is ideal.</small></p>
     <label><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /> I agree to save these samples privately in my account. I can delete them anytime.</label>
-    <p><button onClick={add}>Add another sample</button> <button disabled={!ok || busy || !n} onClick={analyze}>Create voice profile</button></p>
+    <p><button onClick={add}>Add another sample</button> <button className="primary" disabled={!ok || busy || !n} onClick={analyze}>Create voice profile</button></p>
     <p role="status">{msg}</p>
     <h2>Saved profiles</h2>
     {!profiles.length && <p>No voice profiles yet.</p>}
-    {profiles.map((p) => <div key={p.id} style={{ border: "1px solid #e2ddd3", borderRadius: 6, padding: "12px 14px", margin: "10px 0" }}>
+    {profiles.map((p) => <div key={p.id} className="card">
       <b>{p.name}</b><br /><small>Formality {p.profile_json.formality}/10 · directness {Math.round((p.profile_json.directness || 0) * 100)}% · {p.profile_json.contractions ? "uses" : "avoids"} contractions · {p.profile_json.preferred_language}</small>
       <ul>{(p.profile_json.characteristics || []).map((c: string, i: number) => <li key={i}>{c}</li>)}</ul>
       <button onClick={() => del(p.id)}>Delete</button></div>)}
@@ -39,6 +39,6 @@ export default function Voice() {
     <h2>Saved context</h2>
     <p>Optional. Reusable details that ContextWrite can apply to new projects. Nothing is saved unless you press Save, and you can clear it anytime. Avoid sensitive personal details.</p>
     {F.map(([k, l]) => <p key={k}><label>{l}<br /><input style={{ width: "100%" }} value={saved[k] || ""} onChange={(e) => setSaved({ ...saved, [k]: e.target.value })} /></label></p>)}
-    <button onClick={saveCtx}>Save</button> <button onClick={() => { setSaved({}); }}>Clear fields</button> <span role="status">{smsg}</span>
+    <button className="primary" onClick={saveCtx}>Save</button> <button onClick={() => { setSaved({}); }}>Clear fields</button> <span role="status">{smsg}</span>
   </>;
 }
