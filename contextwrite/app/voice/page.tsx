@@ -39,6 +39,6 @@ export default function Voice() {
     <h2>Saved context</h2>
     <p>Optional. Reusable details that ContextWrite can apply to new projects. Nothing is saved unless you press Save, and you can clear it anytime. Avoid sensitive personal details.</p>
     {F.map(([k, l]) => <p key={k}><label>{l}<br /><input style={{ width: "100%" }} value={saved[k] || ""} onChange={(e) => setSaved({ ...saved, [k]: e.target.value })} /></label></p>)}
-    <button className="primary" onClick={saveCtx}>Save</button> <button onClick={() => { setSaved({}); }}>Clear fields</button> <span role="status">{smsg}</span>
+    <button className="primary" onClick={saveCtx}>Save</button> <button onClick={() => { setSaved({ onboarded: saved.onboarded }); }}>Clear fields</button> <span role="status">{smsg}</span>
   </>;
 }

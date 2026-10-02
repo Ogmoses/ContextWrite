@@ -40,3 +40,8 @@ input[type=checkbox]{width:18px;height:18px;vertical-align:-3px;accent-color:var
 @media(prefers-color-scheme:dark){[role=alert]{color:#ff8a80}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media(max-width:520px){body{font-size:16.5px}main{padding:20px 16px 96px}.paper{font-size:18px;padding:18px 16px}}
+
+.ins{background:var(--mark);border-radius:2px}
+.del{text-decoration:line-through;color:var(--mute)}
+.print-only{display:none}
+@media print{body *{visibility:hidden}.print-only,.print-only *{visibility:visible}.print-only{display:block;position:absolute;left:0;top:0;width:100%;white-space:pre-wrap;font:12pt/1.6 Georgia,serif;color:#000;background:#fff}}

@@ -8,7 +8,7 @@ export default function L({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable}`} suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <header className="top"><Link className="brand" href="/">ContextWrite</Link><nav aria-label="Main"><Link href="/dashboard">Projects</Link><Link href="/voice">Your voice</Link><Link href="/settings">AI settings</Link></nav></header>
+        <header className="top"><Link className="brand" href="/">ContextWrite</Link><nav aria-label="Main"><Link href="/dashboard">Projects</Link><Link href="/voice">Your voice</Link><Link href="/settings">AI settings</Link><Link href="/account">Account</Link></nav></header>
         <main>{children}</main>
       </body>
     </html>

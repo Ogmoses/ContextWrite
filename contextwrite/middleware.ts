@@ -14,4 +14,4 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
-export const config = { matcher: ["/dashboard/:path*", "/voice/:path*", "/write/:path*", "/settings/:path*"] };
+export const config = { matcher: ["/dashboard/:path*", "/account/:path*", "/voice/:path*", "/write/:path*", "/settings/:path*"] };

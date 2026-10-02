@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
 import { chat, getCfg, parseJson } from "@/lib/ai";
 import { ENGINE } from "@/lib/prompts";
@@ -6,10 +7,14 @@ export async function POST(req: Request) {
   const sb = await userClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "auth" }, { status: 401 });
+  if (limited("engine:" + user.id, 20)) return NextResponse.json({ error: "Too many requests. Wait a minute and try again." }, { status: 429 });
   const { projectId, description, qa = [] } = await req.json();
+  if (typeof description !== "string" || description.length > 5000 || !Array.isArray(qa) || qa.length > 60 || qa.some((x: any) => typeof x?.q !== "string" || typeof x?.a !== "string" || x.a.length > 6000)) return NextResponse.json({ error: "That input is too long or invalid." }, { status: 400 });
   try {
     const cfg = await getCfg(user.id, "strong");
-    const r = parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa })}\n</user_data>`, true));
+    let docs: any[] = [];
+    if (projectId) { const { data } = await sb.from("documents").select("filename,metadata").eq("project_id", projectId); docs = (data || []).map((d: any) => ({ filename: d.filename, extracted: d.metadata?.analysis })); }
+    const r = parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa })}\n</user_data>\n<untrusted_documents>\n${JSON.stringify(docs)}\n</untrusted_documents>`, true));
     let id = projectId;
     if (!id) { const { data, error } = await sb.from("projects").insert({ user_id: user.id, initial_description: description, title: description.slice(0, 60), writing_type: r.classification?.artifact }).select("id").single(); if (error) throw error; id = data.id; }
     await sb.from("project_context").upsert({ project_id: id, context_json: r.context, completeness_json: { score: r.score, classification: r.classification } }, { onConflict: "project_id" });

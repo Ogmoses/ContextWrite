@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { userClient } from "@/lib/supabase/server";
 import List from "./List";
+import Onboarding from "./Onboarding";
 const T = ["Essay", "Apology letter", "Cover letter", "Speech", "Professional email", "Personal statement", "Complaint letter", "Blog post"];
 export default async function Dash() {
   const sb = await userClient();
@@ -15,6 +16,7 @@ export default async function Dash() {
   });
   return <>
     <h1>Your writing</h1>
+    <Onboarding />
     <p><Link href="/write"><button className="primary">Start something new</button></Link> <Link href="/voice">Your voice</Link> · <Link href="/settings">AI settings</Link></p>
     <h2>Templates</h2>
     <p>{T.map((t) => <Link key={t} href={`/write?t=${encodeURIComponent(t)}`} style={{ marginRight: 12, display: "inline-block" }}>{t}</Link>)}</p>

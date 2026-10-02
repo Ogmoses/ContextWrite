@@ -6,23 +6,25 @@ export function safeBase(u: string) {
   if (x.protocol !== "https:" || /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[)/i.test(x.hostname) || x.hostname.endsWith(".internal")) throw new Error("bad base url");
   return x.origin + x.pathname.replace(/\/$/, "");
 }
-export async function getCfg(userId: string, tier: "fast" | "strong"): Promise<Cfg> {
+export async function getCfg(userId: string, tier: "fast" | "strong" | "vision"): Promise<Cfg> {
   const { data } = await admin().from("user_ai_settings").select("*").eq("user_id", userId).single();
   if (!data) throw Object.assign(new Error("no ai settings"), { code: "NO_AI" });
-  return { provider: data.provider, base: data.base_url, model: tier === "fast" ? data.model_fast : data.model_strong, key: dec(data.encrypted_key) };
+  admin().from("ai_usage").insert({ user_id: userId, request_type: tier, model: tier === "vision" ? data.model_vision : tier === "fast" ? data.model_fast : data.model_strong }).then(() => {}, () => {});
+  if (tier === "vision" && !data.model_vision) throw Object.assign(new Error("no vision"), { code: "NO_VISION" });
+  return { provider: data.provider, base: data.base_url, model: tier === "vision" ? data.model_vision : tier === "fast" ? data.model_fast : data.model_strong, key: dec(data.encrypted_key) };
 }
-export async function chat(c: Cfg, system: string, user: string, json = false): Promise<string> {
+export async function chat(c: Cfg, system: string, user: string, json = false, img?: { mime: string; b64: string }): Promise<string> {
   let url: string, headers: any = { "content-type": "application/json" }, body: any;
   if (c.provider === "anthropic") {
     url = "https://api.anthropic.com/v1/messages"; headers["x-api-key"] = c.key; headers["anthropic-version"] = "2023-06-01";
-    body = { model: c.model, max_tokens: 4096, system, messages: [{ role: "user", content: user }] };
+    body = { model: c.model, max_tokens: 4096, system, messages: [{ role: "user", content: img ? [{ type: "image", source: { type: "base64", media_type: img.mime, data: img.b64 } }, { type: "text", text: user }] : user }] };
   } else if (c.provider === "gemini") {
     url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(c.model)}:generateContent`; headers["x-goog-api-key"] = c.key;
-    body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: json ? { responseMimeType: "application/json" } : {} };
+    body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }, ...(img ? [{ inlineData: { mimeType: img.mime, data: img.b64 } }] : [])] }], generationConfig: json ? { responseMimeType: "application/json" } : {} };
   } else {
     const base = c.provider === "openai" ? "https://api.openai.com/v1" : safeBase(c.base!);
     url = base + "/chat/completions"; headers.authorization = "Bearer " + c.key;
-    body = { model: c.model, messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(json && c.provider === "openai" ? { response_format: { type: "json_object" } } : {}) };
+    body = { model: c.model, messages: [{ role: "system", content: system }, { role: "user", content: img ? [{ type: "text", text: user }, { type: "image_url", image_url: { url: `data:${img.mime};base64,${img.b64}` } }] : user }], ...(json && c.provider === "openai" ? { response_format: { type: "json_object" } } : {}) };
   }
   const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
   if (!r.ok) { console.error("AI provider error", r.status, await r.text()); throw new Error("provider"); }
