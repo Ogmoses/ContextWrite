@@ -1,0 +1,32 @@
+import { admin } from "@/lib/supabase/server";
+import { dec } from "@/lib/crypto";
+export type Cfg = { provider: string; base: string | null; model: string; key: string };
+export function safeBase(u: string) {
+  const x = new URL(u);
+  if (x.protocol !== "https:" || /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[)/i.test(x.hostname) || x.hostname.endsWith(".internal")) throw new Error("bad base url");
+  return x.origin + x.pathname.replace(/\/$/, "");
+}
+export async function getCfg(userId: string, tier: "fast" | "strong"): Promise<Cfg> {
+  const { data } = await admin().from("user_ai_settings").select("*").eq("user_id", userId).single();
+  if (!data) throw Object.assign(new Error("no ai settings"), { code: "NO_AI" });
+  return { provider: data.provider, base: data.base_url, model: tier === "fast" ? data.model_fast : data.model_strong, key: dec(data.encrypted_key) };
+}
+export async function chat(c: Cfg, system: string, user: string, json = false): Promise<string> {
+  let url: string, headers: any = { "content-type": "application/json" }, body: any;
+  if (c.provider === "anthropic") {
+    url = "https://api.anthropic.com/v1/messages"; headers["x-api-key"] = c.key; headers["anthropic-version"] = "2023-06-01";
+    body = { model: c.model, max_tokens: 4096, system, messages: [{ role: "user", content: user }] };
+  } else if (c.provider === "gemini") {
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(c.model)}:generateContent`; headers["x-goog-api-key"] = c.key;
+    body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: "user", parts: [{ text: user }] }], generationConfig: json ? { responseMimeType: "application/json" } : {} };
+  } else {
+    const base = c.provider === "openai" ? "https://api.openai.com/v1" : safeBase(c.base!);
+    url = base + "/chat/completions"; headers.authorization = "Bearer " + c.key;
+    body = { model: c.model, messages: [{ role: "system", content: system }, { role: "user", content: user }], ...(json && c.provider === "openai" ? { response_format: { type: "json_object" } } : {}) };
+  }
+  const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!r.ok) { console.error("AI provider error", r.status, await r.text()); throw new Error("provider"); }
+  const d = await r.json();
+  return c.provider === "anthropic" ? d.content.map((x: any) => x.text || "").join("") : c.provider === "gemini" ? d.candidates[0].content.parts.map((x: any) => x.text || "").join("") : d.choices[0].message.content;
+}
+export const parseJson = (t: string) => JSON.parse(t.replace(/^```(json)?|```$/gim, "").trim());

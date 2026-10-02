@@ -1,0 +1,20 @@
+import { NextResponse } from "next/server";
+import { userClient } from "@/lib/supabase/server";
+import { chat, getCfg, parseJson } from "@/lib/ai";
+import { ENGINE } from "@/lib/prompts";
+export async function POST(req: Request) {
+  const sb = await userClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return NextResponse.json({ error: "auth" }, { status: 401 });
+  const { projectId, description, qa = [] } = await req.json();
+  try {
+    const cfg = await getCfg(user.id, "strong");
+    const r = parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa })}\n</user_data>`, true));
+    let id = projectId;
+    if (!id) { const { data, error } = await sb.from("projects").insert({ user_id: user.id, initial_description: description, title: description.slice(0, 60), writing_type: r.classification?.artifact }).select("id").single(); if (error) throw error; id = data.id; }
+    await sb.from("project_context").upsert({ project_id: id, context_json: r.context, completeness_json: { score: r.score, classification: r.classification } }, { onConflict: "project_id" });
+    await sb.from("context_answers").delete().eq("project_id", id);
+    if (qa.length) await sb.from("context_answers").insert(qa.map((x: any) => ({ project_id: id, question_text: x.q, answer: x.a, source: x.a.startsWith("(skipped") ? "skipped" : "user" })));
+    return NextResponse.json({ projectId: id, result: r });
+  } catch (e: any) { console.error(e); return NextResponse.json({ error: e.code === "NO_AI" ? "NO_AI" : "Something went wrong. Your project is saved. Try again." }, { status: e.code === "NO_AI" ? 400 : 500 }); }
+}
