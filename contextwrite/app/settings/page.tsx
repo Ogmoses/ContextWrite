@@ -11,5 +11,5 @@ export default function Settings() {
   <input aria-label="Fast model" placeholder="Fast model (cheap tasks)" value={f.model_fast} onChange={set("model_fast")} /><br />
   <input aria-label="Strong model" placeholder="Strong model (writing)" value={f.model_strong} onChange={set("model_strong")} /><br />
   <input aria-label="API key" type="password" placeholder="API key" value={f.key} onChange={set("key")} autoComplete="off" /><br />
-  <button onClick={save}>Save</button> <button onClick={async () => { await sb().from("user_ai_settings").delete().neq("id", ""); setM("Key deleted."); }}>Delete key</button><p role="status">{m}</p></>;
+  <button className="primary" onClick={save}>Save</button> <button onClick={async () => { await sb().from("user_ai_settings").delete().neq("id", ""); setM("Key deleted."); }}>Delete key</button><p role="status">{m}</p></>;
 }

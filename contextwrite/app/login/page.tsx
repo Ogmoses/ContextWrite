@@ -9,5 +9,5 @@ export default function Login() {
   };
   const reset = async () => { await sb().auth.resetPasswordForEmail(email, { redirectTo: location.origin + "/login" }); setM("If that email exists, a reset link is on its way."); };
   return <><h1>Sign in</h1><input aria-label="Email" type="email" value={email} onChange={(e) => setE(e.target.value)} placeholder="Email" /><br /><input aria-label="Password" type="password" value={pw} onChange={(e) => setP(e.target.value)} placeholder="Password" /><br />
-  <button onClick={() => go(false)}>Log in</button> <button onClick={() => go(true)}>Sign up</button> <button onClick={reset}>Reset password</button><p role="status">{msg}</p></>;
+  <button className="primary" onClick={() => go(false)}>Log in</button> <button onClick={() => go(true)}>Sign up</button> <button onClick={reset}>Reset password</button><p role="status">{msg}</p></>;
 }

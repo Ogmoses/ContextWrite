@@ -1,4 +1,16 @@
-export const metadata = { title: "ContextWrite" };
+import "./globals.css";
+import Link from "next/link";
+import { Newsreader, Hanken_Grotesk } from "next/font/google";
+const serif = Newsreader({ subsets: ["latin"], variable: "--serif", style: ["normal", "italic"] });
+const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--sans" });
+export const metadata = { title: "ContextWrite", description: "Writing built around what you actually mean." };
 export default function L({ children }: { children: React.ReactNode }) {
-  return <html lang="en" suppressHydrationWarning><body suppressHydrationWarning style={{ margin: 0, font: "17px/1.6 Georgia,serif", background: "#faf8f4", color: "#1d1b18" }}><main style={{ maxWidth: 720, margin: "0 auto", padding: "20px 18px 80px" }}>{children}</main></body></html>;
+  return (
+    <html lang="en" className={`${serif.variable} ${sans.variable}`} suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <header className="top"><Link className="brand" href="/">ContextWrite</Link><nav aria-label="Main"><Link href="/dashboard">Projects</Link><Link href="/voice">Your voice</Link><Link href="/settings">AI settings</Link></nav></header>
+        <main>{children}</main>
+      </body>
+    </html>
+  );
 }
