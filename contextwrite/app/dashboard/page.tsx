@@ -29,7 +29,7 @@ export default async function Dash() {
       <div className="t"><small><Icon n="folder" size={16} />Projects</small><b>{rows.length}</b></div>
       <div className="t"><small><Icon n="pen" size={16} />Words written</small><b>{words.toLocaleString("en-GB")}</b></div>
     </div>
-    <section className="sec c3"><h3>Continue writing</h3>
+    <section className="sec c3"><h3>Your projects</h3>
     <List rows={rows} /></section>
   </>;
 }

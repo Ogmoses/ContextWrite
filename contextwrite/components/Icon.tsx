@@ -12,6 +12,7 @@ const P: Record<string, string> = {
   sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v2M12 20v2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M2 12h2M20 12h2M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400",
   moon: "M21 12.800A9 9 0 1 1 11.200 3a7 7 0 0 0 9.800 9.800z",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  expand: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3 2",
 };
 export default function Icon({ n, size = 20 }: { n: string; size?: number }) {

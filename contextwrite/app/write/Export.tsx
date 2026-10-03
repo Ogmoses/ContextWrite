@@ -21,6 +21,7 @@ export default function Export({ content, projectId }: { content: string; projec
     catch (e: any) { setMsg(e?.message || "Export failed. Try again."); }
     setBusy(false);
   };
+  const share = async () => { try { if (navigator.share) await navigator.share({ title: base, text: content }); else { await navigator.clipboard.writeText(content); setMsg("Copied, ready to paste anywhere."); } } catch {} };
   const print = () => { const t = document.title; document.title = base; const back = () => { document.title = t; window.removeEventListener("afterprint", back); }; window.addEventListener("afterprint", back); window.print(); };
   return <div className="card">
     <label>File name <small>{sug ? "Suggesting a name…" : "suggested from your draft, edit freely"}</small>
@@ -28,6 +29,7 @@ export default function Export({ content, projectId }: { content: string; projec
     <button onClick={() => save(new Blob([content], { type: "text/plain" }), base + ".txt")}>Download TXT</button>
     <button onClick={() => save(new Blob([content], { type: "text/markdown" }), base + ".md")}>Markdown</button>
     <button disabled={busy} onClick={docx}>{busy ? "Preparing…" : "Word (.docx)"}</button>
+    <button onClick={share}>Share</button>
     <button onClick={print}>PDF / Print</button>
     <p role="status"><small>{msg || "PDF: choose “Save as PDF” in the print dialog. The file name above is used."}</small></p>
     {mounted && createPortal(<div className="print-only">{content}</div>, document.body)}
