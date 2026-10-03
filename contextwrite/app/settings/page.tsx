@@ -55,6 +55,8 @@ export default function Settings() {
         <p><small>Images are read by this model. Change it if your main model can't read images:</small><br />{sel(vision, setVision)}</p>
       </details>
       <button className="primary" disabled={busy || !main} onClick={save}>{busy ? "Saving…" : saved ? "Save changes" : "Save and connect"}</button>
+      <p role="alert" aria-live="polite">{status}</p>
     </>}
+    <p><small>Database project: {(() => { try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(".")[0]; } catch { return "not set"; } })()}</small></p>
   </>;
 }
