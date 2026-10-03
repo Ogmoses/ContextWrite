@@ -39,14 +39,16 @@ export default function Settings() {
     <h1>Connect your AI</h1>
     <div className="card"><b>What's happening here</b><p style={{ margin: "6px 0" }}>ContextWrite doesn't come with its own AI. You connect your own account, so you stay in control of cost and privacy. Your key is encrypted on the server and never shown again. Setup takes three steps: pick a provider, paste a key, then confirm the model. The rest is automatic.</p></div>
     {saved && <div className="card"><b>Connected</b><br /><small>{G[saved.provider].name} · {saved.model_strong} · key {saved.key_hint}</small><p><Link href="/write"><button className="primary">Start writing</button></Link> <button onClick={del}>Delete key</button></p></div>}
-    <h2>1. Choose a provider</h2>
+    <section className="sec c1"><h2>1. Choose a provider</h2>
     <div>{Object.keys(G).map((k) => <button key={k} className={provider === k ? "primary" : ""} onClick={() => { setProvider(k); setKey(""); setStatus(""); }}>{G[k].name}</button>)}</div>
     <div className="card"><p style={{ margin: "0 0 6px" }}>{g.note}</p><ol style={{ margin: "0 0 8px" }}>{g.steps.map((s: string, i: number) => <li key={i}>{s}</li>)}</ol><a href={g.url} target="_blank" rel="noopener noreferrer">{g.link} ↗</a></div>
     {provider === "openai_compatible" && <><label>Base URL<input type="text" placeholder="https://openrouter.ai/api/v1" value={base} onChange={(e) => setBase(e.target.value.trim())} /></label></>}
-    <h2>2. Paste your key</h2>
+    </section>
+    <section className="sec c2"><h2>2. Paste your key</h2>
     <input aria-label="API key" type="password" autoComplete="off" placeholder={saved?.provider === provider ? `Saved (${saved.key_hint}). Paste a new key only to replace it` : "Paste your API key"} value={key} onChange={(e) => setKey(e.target.value)} />
     <p role="status"><small>{status || "Models load automatically as soon as the key is pasted."}</small></p>
-    {!!models.length && <>
+    </section>
+    {!!models.length && <section className="sec c3">
       <h2>3. Confirm the model</h2>
       <p>{sel(main, setMain, rec.main)}</p>
       <small>This one writes and revises your drafts. The recommended pick is usually best.</small>
@@ -56,6 +58,6 @@ export default function Settings() {
       </details>
       <button className="primary" disabled={busy || !main} onClick={save}>{busy ? "Saving…" : saved ? "Save changes" : "Save and connect"}</button>
       <p role="status" aria-live="polite">{saveMsg}</p>
-    </>}
+    </section>}
   </>;
 }

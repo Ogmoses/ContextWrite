@@ -34,12 +34,13 @@ export default function Voice() {
     <p><Link href="/dashboard">← Dashboard</Link></p>
     <h1>Your voice</h1>
     <p>Paste things you've written yourself: messages, emails, essays, notes. ContextWrite studies your habits (sentence construction, tone, paragraph spacing, directness) and uses them to draft in your voice. Don't paste text written by others.</p>
-    <textarea aria-label="Writing sample" placeholder="Paste a sample (80+ characters)" value={cur} onChange={(e) => setCur(e.target.value)} style={{ minHeight: 120 }} />
+    <section className="sec c1"><textarea aria-label="Writing sample" placeholder="Paste a sample (80+ characters)" value={cur} onChange={(e) => setCur(e.target.value)} style={{ minHeight: 120 }} />
     <p><small>{all.length} sample{all.length === 1 ? "" : "s"} ready. More varied samples give a better profile; 3 or more is ideal. Use "Add another sample" to add more before creating.</small></p>
     <label>Profile name <small>{sug ? "Suggesting a name…" : "suggested from your writing, edit freely"}</small><input type="text" value={name} onChange={(e) => { setName(e.target.value); setEdited(true); }} placeholder="Name appears after you paste a sample" maxLength={60} /></label>
     <label><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /> I agree to save these samples privately in my account. I can delete them anytime.</label>
     <p><button onClick={add}>Add another sample</button> <button onClick={suggest} disabled={sug || src.trim().length < 80}>Suggest a name</button> <button className="primary" disabled={!ok || busy || !all.length} onClick={analyze}>Create voice profile</button></p>
-    <p role="status">{msg}</p>
+    <p role="status">{msg}</p></section>
+    <section className="sec c2">
     <h2>Saved profiles</h2>
     {!profiles.length && <p>No voice profiles yet.</p>}
     {profiles.length > 1 && <p><small>Tick two or more profiles to merge them into one voice that keeps the patterns they share.</small></p>}
@@ -48,9 +49,10 @@ export default function Voice() {
       {(merged.length > 3 || single.length > 3) && <button style={{ marginTop: 10 }} onClick={() => setShowAll(!showAll)}>{showAll ? "Show fewer" : `Show all ${profiles.length}`}</button>}</div>}
     {sel.length >= 2 && <div className="card"><b>Merge {sel.length} profiles</b><input type="text" value={mname} onChange={(e) => setMname(e.target.value)} placeholder="Name for the merged voice (default: Merged voice)" maxLength={60} /><button className="primary" disabled={busy} onClick={merge}>Merge selected</button><p><small>Compares sentence construction, tone, paragraph spacing and more, and keeps what they share. Your originals stay as they are.</small></p></div>}
     {!!profiles.length && <button onClick={clearAll}>Clear all voice data</button>}
-    <h2>Saved context</h2>
+    </section>
+    <section className="sec c3"><h2>Saved context</h2>
     <p>Optional. Reusable details that ContextWrite can apply to new projects. Nothing is saved unless you press Save, and you can clear it anytime. Avoid sensitive personal details.</p>
     {F.map(([k, l]) => <p key={k}><label>{l}<input type="text" value={saved[k] || ""} onChange={(e) => setSaved({ ...saved, [k]: e.target.value })} /></label></p>)}
-    <button className="primary" onClick={saveCtx}>Save</button> <button onClick={() => setSaved({ onboarded: saved.onboarded })}>Clear fields</button> <span role="status">{smsg}</span>
+    <button className="primary" onClick={saveCtx}>Save</button> <button onClick={() => setSaved({ onboarded: saved.onboarded })}>Clear fields</button> <span role="status">{smsg}</span></section>
   </>;
 }

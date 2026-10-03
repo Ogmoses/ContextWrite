@@ -25,19 +25,20 @@ export default function Account() {
   };
   return <>
     <h1>Account</h1>
-    <p>Signed in as <b>{email}</b></p>
+    <section className="sec c1"><p style={{ margin: "0 0 8px" }}>Signed in as <b>{email}</b></p>
     <button onClick={async () => { await sb().auth.signOut(); location.href = "/"; }}>Log out</button>
-    <p><Link href="/settings"><button>AI settings</button></Link></p>
-    <h2>Your data</h2>
+    <p><Link href="/settings"><button>AI settings</button></Link></p></section>
+    <section className="sec c2"><h2>Your data</h2>
     <p>Download everything ContextWrite holds about you as one file: projects, answers, drafts and versions, voice profiles and samples, and saved context.</p>
     <button disabled={busy} onClick={exportAll}>Export all my data</button>
     <p>Delete a single project from your <Link href="/dashboard">dashboard</Link>, or manage voice data on <Link href="/voice">Your voice</Link>. Your AI key is removed from <Link href="/settings">AI settings</Link>.</p>
     <p role="status"><small>{msg}</small></p>
-    <h2>Delete account</h2>
-    <div className="card">
+    </section>
+    <section className="sec c3"><h2>Delete account</h2>
+    <div>
       <p>This permanently deletes your account and everything in it: projects, drafts, versions, voice profiles, samples, uploaded files, saved context and your AI key. It can't be undone. Export your data first if you want a copy.</p>
       <label>Type DELETE to confirm<input type="text" value={conf} onChange={(e) => setConf(e.target.value)} autoComplete="off" /></label>
       <button disabled={busy || conf !== "DELETE"} onClick={del}>Delete my account permanently</button>
-    </div>
+    </div></section>
   </>;
 }
