@@ -1,16 +1,60 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { sb } from "@/lib/supabase/browser";
+const G: any = {
+  gemini: { name: "Google Gemini", note: "Easiest to start. Has a free tier within Google's daily limits.", url: "https://aistudio.google.com/apikey", link: "Open Google AI Studio", steps: ["Sign in with your Google account.", "Tap Create API key.", "Copy the key and paste it below."] },
+  openai: { name: "OpenAI", note: "Pay as you go. You'll need a little credit on your account.", url: "https://platform.openai.com/api-keys", link: "Open OpenAI API keys", steps: ["Sign in and add a few dollars of credit under Billing.", "Tap Create new secret key.", "Copy it straight away (it's shown once) and paste it below."] },
+  anthropic: { name: "Claude", note: "Pay as you go. You'll need a little credit on your account.", url: "https://console.anthropic.com/settings/keys", link: "Open Anthropic Console", steps: ["Sign in and add a few dollars of credit under Billing.", "Tap Create Key.", "Copy it straight away (it's shown once) and paste it below."] },
+  openai_compatible: { name: "Other", note: "For OpenRouter, Groq, Together or your own server that follows the OpenAI format.", url: "https://openrouter.ai/keys", link: "Example: OpenRouter keys", steps: ["Find the service's base URL, e.g. https://openrouter.ai/api/v1", "Create an API key on that service.", "Paste the URL and the key below."] },
+};
 export default function Settings() {
-  const [f, setF] = useState<any>({ provider: "anthropic", base_url: "", model_fast: "", model_strong: "", model_vision: "", key: "" }), [m, setM] = useState("");
-  const set = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
-  const save = async () => { const r = await fetch("/api/ai-settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) }); setM(r.ok ? "Saved. Your key is encrypted and never shown again." : (await r.json()).error); setF({ ...f, key: "" }); };
-  return <><h1>AI provider</h1><p>Use your own key. Model names come from your provider's docs.</p>
-  <select aria-label="Provider" value={f.provider} onChange={set("provider")}><option value="anthropic">Anthropic</option><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="openai_compatible">OpenAI-compatible (custom URL)</option></select><br />
-  {f.provider === "openai_compatible" && <><input aria-label="Base URL" placeholder="https://api.example.com/v1" value={f.base_url} onChange={set("base_url")} /><br /></>}
-  <input aria-label="Fast model" placeholder="Fast model (cheap tasks)" value={f.model_fast} onChange={set("model_fast")} /><br />
-  <input aria-label="Strong model" placeholder="Strong model (writing)" value={f.model_strong} onChange={set("model_strong")} /><br />
-  <input aria-label="Vision model" placeholder="Vision model (optional, to read images)" value={f.model_vision} onChange={set("model_vision")} /><br />
-  <input aria-label="API key" type="password" placeholder="API key" value={f.key} onChange={set("key")} autoComplete="off" /><br />
-  <button className="primary" onClick={save}>Save</button> <button onClick={async () => { await sb().from("user_ai_settings").delete().not("id", "is", null); setM("Key deleted."); }}>Delete key</button><p role="status">{m}</p></>;
+  const [provider, setProvider] = useState("gemini"), [base, setBase] = useState(""), [key, setKey] = useState(""), [models, setModels] = useState<string[]>([]), [rec, setRec] = useState<any>({}),
+    [main, setMain] = useState(""), [fast, setFast] = useState(""), [vision, setVision] = useState(""), [status, setStatus] = useState(""), [saved, setSaved] = useState<any>(null), [busy, setBusy] = useState(false), [ready, setReady] = useState(false);
+  const loadSaved = async () => { const { data } = await sb().from("user_ai_settings").select("provider,base_url,model_fast,model_strong,model_vision,key_hint").maybeSingle(); setSaved(data); if (data) { setProvider(data.provider); setBase(data.base_url || ""); setMain(data.model_strong); setFast(data.model_fast); setVision(data.model_vision || data.model_strong); } setReady(true); };
+  useEffect(() => { loadSaved(); }, []);
+  const canFetch = ready && (provider !== "openai_compatible" || base.startsWith("https://")) && (key.trim().length >= 20 || (!key && saved?.provider === provider));
+  useEffect(() => {
+    setModels([]); if (!canFetch) return;
+    const t = setTimeout(async () => {
+      setStatus("Checking your key…");
+      const r = await fetch("/api/ai-models", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider, key, base_url: base }) });
+      const d = await r.json().catch(() => ({})); if (!r.ok) return setStatus(d.error || "Couldn't check the key.");
+      setModels(d.models); setRec(d.recommended);
+      setMain((m) => (d.models.includes(m) ? m : d.recommended.main)); setFast((m) => (d.models.includes(m) ? m : d.recommended.fast)); setVision((m) => (d.models.includes(m) ? m : d.recommended.main));
+      setStatus(`✓ Key works. ${d.models.length} models found and the best match is already selected.`);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [key, provider, base, canFetch]);
+  const save = async () => {
+    setBusy(true);
+    const r = await fetch("/api/ai-settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider, base_url: base, key, model_strong: main, model_fast: fast, model_vision: vision }) });
+    const d = await r.json().catch(() => ({})); setBusy(false);
+    if (!r.ok) return setStatus(d.error || "Couldn't save."); setKey(""); setStatus("Saved. You're ready to write."); loadSaved();
+  };
+  const del = async () => { if (!confirm("Delete your saved AI key?")) return; await sb().from("user_ai_settings").delete().not("id", "is", null); setSaved(null); setModels([]); setMain(""); setStatus("Key deleted."); };
+  const sel = (v: string, set: (x: string) => void, r?: string) => <select aria-label="Model" style={{ maxWidth: "100%" }} value={v} onChange={(e) => set(e.target.value)}>{models.map((m) => <option key={m} value={m}>{m}{m === r ? " (recommended)" : ""}</option>)}</select>;
+  const g = G[provider];
+  return <>
+    <h1>Connect your AI</h1>
+    <div className="card"><b>What's happening here</b><p style={{ margin: "6px 0" }}>ContextWrite doesn't come with its own AI. You connect your own account, so you stay in control of cost and privacy. Your key is encrypted on the server and never shown again. Setup takes three steps: pick a provider, paste a key, then confirm the model. The rest is automatic.</p></div>
+    {saved && <div className="card"><b>Connected</b><br /><small>{G[saved.provider].name} · {saved.model_strong} · key {saved.key_hint}</small><p><Link href="/write"><button className="primary">Start writing</button></Link> <button onClick={del}>Delete key</button></p></div>}
+    <h2>1. Choose a provider</h2>
+    <div>{Object.keys(G).map((k) => <button key={k} className={provider === k ? "primary" : ""} onClick={() => { setProvider(k); setKey(""); setStatus(""); }}>{G[k].name}</button>)}</div>
+    <div className="card"><p style={{ margin: "0 0 6px" }}>{g.note}</p><ol style={{ margin: "0 0 8px" }}>{g.steps.map((s: string, i: number) => <li key={i}>{s}</li>)}</ol><a href={g.url} target="_blank" rel="noopener noreferrer">{g.link} ↗</a></div>
+    {provider === "openai_compatible" && <><label>Base URL<input type="text" placeholder="https://openrouter.ai/api/v1" value={base} onChange={(e) => setBase(e.target.value.trim())} /></label></>}
+    <h2>2. Paste your key</h2>
+    <input aria-label="API key" type="password" autoComplete="off" placeholder={saved?.provider === provider ? `Saved (${saved.key_hint}). Paste a new key only to replace it` : "Paste your API key"} value={key} onChange={(e) => setKey(e.target.value)} />
+    <p role="status"><small>{status || "Models load automatically as soon as the key is pasted."}</small></p>
+    {!!models.length && <>
+      <h2>3. Confirm the model</h2>
+      <p>{sel(main, setMain, rec.main)}</p>
+      <small>This one writes and revises your drafts. The recommended pick is usually best.</small>
+      <details style={{ margin: "12px 0" }}><summary>Advanced (optional)</summary>
+        <p><small>Quick tasks like reading documents use a cheaper, faster model:</small><br />{sel(fast, setFast, rec.fast)}</p>
+        <p><small>Images are read by this model. Change it if your main model can't read images:</small><br />{sel(vision, setVision)}</p>
+      </details>
+      <button className="primary" disabled={busy || !main} onClick={save}>{busy ? "Saving…" : saved ? "Save changes" : "Save and connect"}</button>
+    </>}
+  </>;
 }
