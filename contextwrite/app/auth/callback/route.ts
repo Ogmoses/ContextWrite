@@ -4,6 +4,7 @@ import { userClient } from "@/lib/supabase/server";
 export async function GET(req: Request) {
   const url = new URL(req.url), code = url.searchParams.get("code"), next = url.searchParams.get("next") || "/dashboard";
   const dest = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  if (!code && url.searchParams.get("error_description")) return NextResponse.redirect(new URL("/login?mode=oauth_error", url.origin));
   if (code) {
     const { error } = await (await userClient()).auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(new URL(dest, url.origin));

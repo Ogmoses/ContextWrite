@@ -22,15 +22,13 @@ export default async function Dash() {
     <div className="hello"><span className="av">{name[0]?.toUpperCase()}</span><div><b>Welcome back, {name}</b><small>{open} project{open === 1 ? "" : "s"} in progress</small></div></div>
     <Onboarding />
     <div className="hero"><h2>What are you trying to write?</h2><Link href="/write"><button>Start writing</button></Link></div>
-    <section className="sec c1"><h3>Templates</h3>
+    <h3 style={{ marginTop: 8 }}>Templates</h3>
     <div className="chips">{T.map((t) => <Link key={t} href={`/write?t=${encodeURIComponent(t)}`}>{t}</Link>)}</div>
-    </section>
-    <section className="sec c2"><h3>Your writing</h3>
+    <h3>Your writing</h3>
     <div className="tiles">
       <div className="t"><small><Icon n="folder" size={16} />Projects</small><b>{rows.length}</b></div>
       <div className="t"><small><Icon n="pen" size={16} />Words written</small><b>{words.toLocaleString("en-GB")}</b></div>
     </div>
-    </section>
     <section className="sec c3"><h3>Continue writing</h3>
     <List rows={rows} /></section>
   </>;
