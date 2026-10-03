@@ -44,4 +44,4 @@ input[type=checkbox]{width:18px;height:18px;vertical-align:-3px;accent-color:var
 .ins{background:var(--mark);border-radius:2px}
 .del{text-decoration:line-through;color:var(--mute)}
 .print-only{display:none}
-@media print{body *{visibility:hidden}.print-only,.print-only *{visibility:visible}.print-only{display:block;position:absolute;left:0;top:0;width:100%;white-space:pre-wrap;font:12pt/1.6 Georgia,serif;color:#000;background:#fff}}
+@media print{@page{margin:18mm}body{background:#fff!important}body>:not(.print-only){display:none!important}.print-only{display:block;white-space:pre-wrap;font:12pt/1.6 Georgia,serif;color:#000;background:#fff}}
