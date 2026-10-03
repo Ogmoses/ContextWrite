@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/errors";
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
 import { chat, getCfg, parseJson } from "@/lib/ai";
@@ -40,5 +41,5 @@ export async function POST(req: Request) {
     const { data, error } = await sb.from("documents").insert({ project_id: projectId, filename: file.name.slice(0, 120), storage_path: path, extracted_text: text, metadata: { analysis } }).select("id").single();
     if (error) throw error;
     return NextResponse.json({ id: data.id });
-  } catch (e: any) { console.error(e); return NextResponse.json({ error: e.code === "NO_VISION" ? "Add a vision-capable model in AI settings to read images." : e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Couldn't read that file. Try again." }, { status: 500 }); }
+  } catch (e: any) { console.error(e); logError("upload", e); return NextResponse.json({ error: e.code === "NO_VISION" ? "Add a vision-capable model in AI settings to read images." : e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Couldn't read that file. Try again." }, { status: 500 }); }
 }

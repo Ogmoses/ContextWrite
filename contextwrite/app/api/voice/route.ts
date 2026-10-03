@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/errors";
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
 import { chat, getCfg, parseJson } from "@/lib/ai";
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "auth" }, { status: 401 });
   const b = await req.json(), action = b.action;
   if (limited(`voice-${action || "create"}:` + user.id, action === "name" ? 15 : 5)) return NextResponse.json({ error: "Too many requests. Wait a minute and try again." }, { status: 429 });
-  const fail = (e: any) => { console.error(e); return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); };
+  const fail = (e: any) => { console.error(e); logError("voice", e); return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); };
   try {
     if (action === "name") {
       const s = String(b.sample || "").slice(0, 3000);

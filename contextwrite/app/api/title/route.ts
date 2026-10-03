@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@/lib/errors";
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
 import { chat, getCfg, parseJson } from "@/lib/ai";
@@ -13,5 +14,5 @@ export async function POST(req: Request) {
   try {
     const r = parseJson(await chat(await getCfg(user.id, "fast"), P, `<user_data>\n${s}\n</user_data>`, true));
     return NextResponse.json({ title: String(r.title || "").slice(0, 80) });
-  } catch (e) { console.error(e); return NextResponse.json({ error: "Couldn't suggest a title." }, { status: 500 }); }
+  } catch (e) { console.error(e); logError("title", e); return NextResponse.json({ error: "Couldn't suggest a title." }, { status: 500 }); }
 }
