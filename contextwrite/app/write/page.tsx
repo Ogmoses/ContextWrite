@@ -7,6 +7,7 @@ import Upload from "./Upload";
 import Actions from "./Actions";
 import BrainDump from "./BrainDump";
 import Plan from "./Plan";
+import QBar from "./QBar";
 import Quality from "./Quality";
 import Toolbar from "./Toolbar";
 const post = async (u: string, b: any) => { const r = await fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }); return { ok: r.ok, d: await r.json() }; };
@@ -50,7 +51,7 @@ export default function Write() {
     {pid && <Plan projectId={pid} />}
     <p>{voiceSel} <a href="/voice">Manage</a></p>
     <textarea aria-label="Correct context" placeholder="Correct or add anything" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} /> <button className="primary" onClick={() => ans && engine([...qa, { q: "User correction", a: ans }])}>Update context</button> <button className="primary" disabled={!!busy} onClick={() => gen()}>Looks right — write it</button><p>{busy}</p><p role="alert">{err}</p></>;
-  if (r?.next_question) { const q = r.next_question; return <><div className="meter" role="progressbar" aria-label="Context collected" aria-valuenow={r.score} aria-valuemin={0} aria-valuemax={100}><i style={{ width: r.score + "%" }} /></div><small>Context {r.score}%{r.classification?.artifact ? " · " + String(r.classification.artifact).replace(/_/g, " ") : ""}</small><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
+  if (r?.next_question) { const q = r.next_question; return <><QBar qa={qa} score={r.score || 0} title={String(r.classification?.artifact || "").replace(/_/g, " ")} busy={!!busy} onJump={(i) => engine(qa.slice(0, i))} /><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
     {!!q.options?.length && <div style={{ margin: "8px 0" }}>{q.options.map((o: string) => q.type === "multi"
       ? <button key={o} className={picked.includes(o) ? "primary" : ""} aria-pressed={picked.includes(o)} onClick={() => setPicked(picked.includes(o) ? picked.filter((x) => x !== o) : [...picked, o])}>{o}</button>
       : <button key={o} disabled={!!busy} onClick={() => engine([...qa, { q: q.text, a: o }])}>{o}</button>)}
