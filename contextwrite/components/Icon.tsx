@@ -13,6 +13,16 @@ const P: Record<string, string> = {
   moon: "M21 12.800A9 9 0 1 1 11.200 3a7 7 0 0 0 9.800 9.800z",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   expand: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
+  undo: "M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.300L3 13",
+  redo: "M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.300L21 13",
+  list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  quote: "M3 21c3 0 7-1 7-8V5H4v6h4M14 21c3 0 7-1 7-8V5h-6v6h4",
+  link: "M10 13a5 5 0 0 0 7.500.500l3-3a5 5 0 0 0-7-7l-1.700 1.700M14 11a5 5 0 0 0-7.500-.500l-3 3a5 5 0 0 0 7 7l1.700-1.700",
+  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M21 21l-4.300-4.300",
+  save: "M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2M7 3v6h8V3M7 21v-7h10v7",
+  copy: "M9 9h11v11H9zM5 15V5h10",
+  check: "M5 12.500 10 17 19 7",
+  sliders: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3 2",
 };
 export default function Icon({ n, size = 20 }: { n: string; size?: number }) {

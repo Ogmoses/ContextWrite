@@ -68,3 +68,17 @@ input[type=checkbox]{width:18px;height:18px;vertical-align:-3px;accent-color:var
 .fsbar{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--brand) 13%,var(--bg))}
 .fsed{flex:1;min-height:0;width:100%;border:0;outline:0;resize:none;padding:20px 18px 48px;background:var(--surface);color:var(--ink);font:19px/1.75 var(--serif),Georgia,serif}
 .row3{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}button.sm{padding:8px 14px;min-height:40px;margin:0;display:inline-flex;align-items:center;gap:6px}
+a.ib{border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none}
+.fpill{display:flex;align-items:center;gap:2px;overflow-x:auto;padding:4px 8px;border-radius:999px;background:var(--surface);border:1px solid var(--line);box-shadow:0 4px 16px rgba(76,5,133,.12);scrollbar-width:none}
+.fpill .sep{flex:none;width:1px;height:20px;background:var(--line);margin:0 4px}
+button.tb{flex:none;width:38px;height:38px;min-height:0;padding:0;margin:0;border:0;background:none;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
+button.tb[aria-pressed=true]{background:var(--tile);color:var(--btn)}
+.dbar{position:sticky;top:0;z-index:15;background:var(--bg);padding:8px 0;display:grid;gap:8px}
+.tools{display:flex;gap:8px;align-items:center}
+.edwrap{position:relative}.edwrap .paper{padding-top:46px}
+.xp{position:absolute;top:8px;right:8px;width:36px;height:36px;min-height:0;padding:0;margin:0;border-radius:10px;background:var(--surface);color:var(--mute);border:1px solid var(--line);display:grid;place-items:center;opacity:.9}
+details.sec>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px;font:600 1.05rem var(--sans),sans-serif}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);margin-right:4px}
+details.sec[open]>summary::after{transform:rotate(-135deg)}
+details.sec[open]>summary{margin-bottom:8px}

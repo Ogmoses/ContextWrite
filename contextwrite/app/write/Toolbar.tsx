@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Icon from "@/components/Icon";
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export default function Toolbar({ draft, range, setDraft, onClear }: { draft: string; range: [number, number]; setDraft: (t: string) => void; onClear: () => void }) {
   const h = useRef<string[]>([draft]), i = useRef(0), pos = useRef(0);
@@ -18,16 +19,21 @@ export default function Toolbar({ draft, range, setDraft, onClear }: { draft: st
   const next = () => { if (!find) return; const r = re(); r.lastIndex = pos.current; let m = r.exec(draft); if (!m) { r.lastIndex = 0; m = r.exec(draft); } if (!m) return setInfo("No matches."); pos.current = m.index + m[0].length; const t = ta(); t.focus(); t.setSelectionRange(m.index, m.index + m[0].length); setInfo(`${count()} match${count() === 1 ? "" : "es"}`); };
   const replaceOne = () => { const t = ta(), s = t.selectionStart, e = t.selectionEnd, x = draft.slice(s, e); if (find && (mc ? x === find : x.toLowerCase() === find.toLowerCase())) { apply(draft.slice(0, s) + rep + draft.slice(e)); pos.current = s + rep.length; setInfo("Replaced. Tap Find next to continue."); } else next(); };
   const all = () => { const n = count(); if (!n) return setInfo("No matches."); apply(draft.replace(re(), () => rep)); setInfo(`Replaced ${n}.`); };
-  const B = (l: string, f: () => void, label?: string) => <button key={l} aria-label={label || l} onMouseDown={(e) => e.preventDefault()} onClick={f}>{l}</button>;
-  return <div style={{ margin: "6px 0" }}>
-    {B("Undo", undo)}{B("Redo", redo)}{B("Bold", () => wrap("**", "bold text"))}{B("Italic", () => wrap("*", "italic text"))}{B("Heading", () => lines("# "))}{B("Subheading", () => lines("## "))}{B("List", () => lines("- "))}{B("Quote", () => lines("> "))}{B("Link", link)}
-    <button aria-expanded={open} onClick={() => setOpen(!open)}>Find &amp; replace</button>
-    {open && <div className="card">
+  const T = (label: string, f: () => void, g: React.ReactNode, on = false) => <button key={label} className="tb" aria-label={label} title={label} aria-pressed={on || undefined} onMouseDown={(e) => e.preventDefault()} onClick={f}>{g}</button>;
+  const ic = (n: string) => <Icon n={n} size={18} />, tx = (s: string) => <span style={{ fontSize: 13, fontWeight: 700 }}>{s}</span>;
+  return <div>
+    <div className="fpill" role="toolbar" aria-label="Formatting">
+      {T("Undo", undo, ic("undo"))}{T("Redo", redo, ic("redo"))}<span className="sep" />
+      {T("Bold", () => wrap("**", "bold text"), <b style={{ fontSize: 16 }}>B</b>)}{T("Italic", () => wrap("*", "italic text"), <i style={{ fontSize: 16, fontFamily: "Georgia,serif" }}>I</i>)}
+      {T("Heading", () => lines("# "), tx("H1"))}{T("Subheading", () => lines("## "), tx("H2"))}<span className="sep" />
+      {T("List", () => lines("- "), ic("list"))}{T("Quote", () => lines("> "), ic("quote"))}{T("Link", link, ic("link"))}<span className="sep" />
+      {T("Find and replace", () => setOpen(!open), ic("search"), open)}
+    </div>
+    {open && <div className="card" style={{ margin: "8px 0 0" }}>
       <input type="text" aria-label="Find" placeholder="Find" value={find} onChange={(e) => { setFind(e.target.value); pos.current = 0; setInfo(""); }} />
       <input type="text" aria-label="Replace with" placeholder="Replace with" value={rep} onChange={(e) => setRep(e.target.value)} />
       <label><input type="checkbox" checked={mc} onChange={(e) => setMc(e.target.checked)} /> Match case</label>
-      <p><button onClick={next}>Find next</button><button onClick={replaceOne}>Replace</button><button onClick={all}>Replace all</button> <small role="status">{info || (find ? `${count()} match${count() === 1 ? "" : "es"}` : "")}</small></p>
+      <p style={{ margin: "8px 0 0" }}><button className="sm" onClick={next}>Find next</button> <button className="sm" onClick={replaceOne}>Replace</button> <button className="sm" onClick={all}>Replace all</button> <small role="status">{info || (find ? `${count()} match${count() === 1 ? "" : "es"}` : "")}</small></p>
     </div>}
-    <p style={{ margin: "2px 0" }}><small>Formatting uses simple markup (**bold**, *italic*, # headings) that carries into Markdown and Word exports.</small></p>
   </div>;
 }

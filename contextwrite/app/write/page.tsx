@@ -9,6 +9,7 @@ import BrainDump from "./BrainDump";
 import Plan from "./Plan";
 import QBar from "./QBar";
 import Icon from "@/components/Icon";
+import Fold from "./Fold";
 import Quality from "./Quality";
 import Toolbar from "./Toolbar";
 const post = async (u: string, b: any) => { const r = await fetch(u, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }); return { ok: r.ok, d: await r.json() }; };
@@ -64,27 +65,31 @@ export default function Write() {
   if (draft) return <>
     <h2>Your draft</h2>
     {locked && <div className="card"><b>This project is finished.</b><p style={{ margin: "4px 0 8px" }}>Reopen it to make changes.</p><button className="primary" onClick={reopen}>Reopen for editing</button></div>}
-    <div className="row3">
-      <button className="sm" onClick={() => setFull(true)}><Icon n="expand" size={16} /> Expand</button>
-      <button className="sm" disabled={!!busy || locked} onClick={() => saveNow(false)}>Save</button>
-      <button className="primary sm" disabled={!!busy || locked} onClick={() => { if (confirm("Mark this project as finished? You can reopen it later.")) saveNow(true); }}>Finish</button>
-      <button className="sm" onClick={() => navigator.clipboard.writeText(draft)}>Copy</button>
+    <div className="dwrap">
+      <div className="dbar">
+        <div className="tools">
+          <button className="sm" disabled={!!busy || locked} onClick={() => saveNow(false)}><Icon n="save" size={16} /> Save</button>
+          <button className="primary sm" disabled={!!busy || locked} onClick={() => { if (confirm("Mark this project as finished? You can reopen it later.")) saveNow(true); }}><Icon n="check" size={16} /> Finish</button>
+          <span style={{ marginLeft: "auto" }} />
+          <button className="sm" aria-label="Copy draft" title="Copy draft" onClick={() => navigator.clipboard.writeText(draft)}><Icon n="copy" size={16} /></button>
+        </div>
+        {!locked && <Toolbar draft={draft} range={rng} setDraft={setDraft} onClear={() => setRng([0, 0])} />}
+      </div>
+      <div className="edwrap">{editor}<button className="xp" aria-label="Expand editor" title="Expand editor" onClick={() => setFull(true)}><Icon n="expand" size={18} /></button></div>
     </div>
     <small role="status">{saveMsg}</small>
-    {!locked && <Toolbar draft={draft} range={rng} setDraft={setDraft} onClear={() => setRng([0, 0])} />}
-    {editor}
     <p><small>{words} words · {Math.max(1, Math.round(words / 200))} min read · {draft.length} characters</small></p>
     {!locked && pid && <Actions projectId={pid} draft={draft} range={rng} onClear={() => setRng([0, 0])} setDraft={setDraft} opts={{ tone, voice, voiceId, useSaved }} onFull={gen} />}
-    {!locked && <section className="sec c2"><h3>Refine</h3>
+    {!locked && <Fold title="Refine" cls="c2" open>
       <input aria-label="Revision" placeholder="Tell me what to change, e.g. this sounds too formal" value={ins} onChange={(e) => setIns(e.target.value)} />
       <button className="primary" disabled={!!busy || !ins.trim()} onClick={() => gen(ins)}>Apply change</button> <small>Highlight text first to change only that part.</small>
       <p style={{ margin: "14px 0 6px" }}><small>Voice and context</small></p>
       <p style={{ margin: 0 }}>{voiceSel}</p>
       <button style={{ marginTop: 8 }} disabled={!!busy || !voiceId} onClick={() => gen("Rewrite to sound like my voice profile. Keep every fact and the meaning; adjust vocabulary, rhythm, sentence complexity, directness and punctuation.")}>Sound like me</button>
-    </section>}
-    {pid && <section className="sec c3"><h3>Check</h3><p style={{ margin: "0 0 8px" }}><small>Review the draft against your context: unsupported claims, generic phrases and missing details.</small></p><Quality projectId={pid} content={draft} voiceId={voiceId} /></section>}
-    <section className="sec c4"><h3>Export and share</h3><Export content={draft} projectId={pid} /></section>
-    {pid && <section className="sec c5"><h3>History</h3><Versions projectId={pid} current={draft} onRestore={setDraft} /></section>}
+    </Fold>}
+    {pid && <Fold title="Check" cls="c3"><p style={{ margin: "0 0 8px" }}><small>Review the draft against your context: unsupported claims, generic phrases and missing details.</small></p><Quality projectId={pid} content={draft} voiceId={voiceId} /></Fold>}
+    <Fold title="Export and share" cls="c4"><Export content={draft} projectId={pid} /></Fold>
+    {pid && <Fold title="History" cls="c5"><Versions projectId={pid} current={draft} onRestore={setDraft} /></Fold>}
     <p><button onClick={() => setDraft("")}>Back to context</button> <a href="/dashboard">Dashboard</a></p>
     <p>{busy}</p><p role="alert">{err}</p></>;
 

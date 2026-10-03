@@ -27,7 +27,7 @@ export default function Account() {
     <h1>Account</h1>
     <section className="sec c1"><p style={{ margin: "0 0 8px" }}>Signed in as <b>{email}</b></p>
     <button onClick={async () => { await sb().auth.signOut(); location.href = "/"; }}>Log out</button>
-    <p><Link href="/settings"><button>AI settings</button></Link></p></section>
+    </section>
     <section className="sec c2"><h2>Your data</h2>
     <p>Download everything ContextWrite holds about you as one file: projects, answers, drafts and versions, voice profiles and samples, and saved context.</p>
     <button disabled={busy} onClick={exportAll}>Export all my data</button>

@@ -20,6 +20,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   return <>
     {!auth && <header className="top"><div className="hi"><Link href="/" className="brand"><Logo size={30} />{BRAND.name}</Link>
       <button className="ib" aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} onClick={flip}><Icon n={dark ? "sun" : "moon"} /></button>
+      {authed && <Link href="/settings" className="ib" aria-label="AI settings" title="AI settings"><Icon n="sliders" /></Link>}
       {authed && <button className="ib" aria-label="Log out" onClick={out}><Icon n="logout" /></button>}</div></header>}
     {auth ? <div className="authwrap">{children}</div> : <main>{children}</main>}
     {pill && <nav className="pill" aria-label="Main">
