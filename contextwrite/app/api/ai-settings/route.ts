@@ -29,7 +29,8 @@ export async function POST(req: Request) {
   } catch (e: any) {
     console.error("ai-settings save failed", e?.code, e?.message);
     const m = String(e?.message || "");
-    const error = e?.code === "23503" ? "Your account has no profile in this database. This usually means the site is connected to a different Supabase project than the one you signed up in. Check the three Supabase variables in Vercel all belong to the same project, redeploy, then sign up again."
+    const error = e?.code === "PGRST205" || e?.code === "42P01" || /schema cache|does not exist/i.test(m) ? "This site is connected to a Supabase project that has no ContextWrite tables. In Vercel, point the three Supabase variables at the contextwrite project, redeploy, and sign up again."
+      : e?.code === "23503" ? "Your account has no profile in this database. This usually means the site is connected to a different Supabase project than the one you signed up in. Check the three Supabase variables in Vercel all belong to the same project, redeploy, then sign up again."
       : /jwt|api key|apikey|invalid/i.test(m) ? "Server setup problem: SUPABASE_SERVICE_ROLE_KEY doesn't belong to the same Supabase project as NEXT_PUBLIC_SUPABASE_URL. Fix it in Vercel and redeploy."
       : "Couldn't save. Check the provider, key and model.";
     return NextResponse.json({ error }, { status: 400 });
