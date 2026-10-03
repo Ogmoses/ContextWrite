@@ -3,12 +3,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import Icon from "./Icon";
+import { useEffect, useState } from "react";
+import { sb } from "@/lib/supabase/browser";
 import { BRAND } from "@/lib/brand";
 export default function Shell({ children }: { children: React.ReactNode }) {
   const p = usePathname() || "/", auth = p.startsWith("/login"), pill = !auth && p !== "/";
+  const [dark, setDark] = useState(false), [authed, setAuthed] = useState(false);
+  useEffect(() => {
+    const t = document.documentElement.dataset.theme;
+    setDark(t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
+    sb().auth.getUser().then(({ data }) => setAuthed(!!data.user)).catch(() => {});
+  }, [p]);
+  const flip = () => { const n = dark ? "light" : "dark"; document.documentElement.dataset.theme = n; try { localStorage.setItem("cw-theme", n); } catch {} setDark(!dark); };
+  const out = async () => { await sb().auth.signOut(); location.href = "/"; };
   const on = (h: string) => p.startsWith(h) ? "on" : "";
   return <>
-    {!auth && <header className="top"><Link href="/" className="brand"><Logo size={30} />{BRAND.name}</Link></header>}
+    {!auth && <header className="top"><div className="hi"><Link href="/" className="brand"><Logo size={30} />{BRAND.name}</Link>
+      <button className="ib" aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} onClick={flip}><Icon n={dark ? "sun" : "moon"} /></button>
+      {authed && <button className="ib" aria-label="Log out" onClick={out}><Icon n="logout" /></button>}</div></header>}
     {auth ? <div className="authwrap">{children}</div> : <main>{children}</main>}
     {pill && <nav className="pill" aria-label="Main">
       <Link href="/dashboard" className={on("/dashboard")}><Icon n="home" />Home</Link>

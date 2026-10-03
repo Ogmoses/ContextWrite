@@ -10,7 +10,7 @@ const G: any = {
 };
 export default function Settings() {
   const [provider, setProvider] = useState("gemini"), [base, setBase] = useState(""), [key, setKey] = useState(""), [models, setModels] = useState<string[]>([]), [rec, setRec] = useState<any>({}),
-    [main, setMain] = useState(""), [fast, setFast] = useState(""), [vision, setVision] = useState(""), [status, setStatus] = useState(""), [saved, setSaved] = useState<any>(null), [busy, setBusy] = useState(false), [ready, setReady] = useState(false);
+    [main, setMain] = useState(""), [fast, setFast] = useState(""), [vision, setVision] = useState(""), [status, setStatus] = useState(""), [saved, setSaved] = useState<any>(null), [busy, setBusy] = useState(false), [saveMsg, setSaveMsg] = useState(""), [ready, setReady] = useState(false);
   const loadSaved = async () => { const { data } = await sb().from("user_ai_settings").select("provider,base_url,model_fast,model_strong,model_vision,key_hint").maybeSingle(); setSaved(data); if (data) { setProvider(data.provider); setBase(data.base_url || ""); setMain(data.model_strong); setFast(data.model_fast); setVision(data.model_vision || data.model_strong); } setReady(true); };
   useEffect(() => { loadSaved(); }, []);
   const canFetch = ready && (provider !== "openai_compatible" || base.startsWith("https://")) && (key.trim().length >= 20 || (!key && saved?.provider === provider));
@@ -22,7 +22,7 @@ export default function Settings() {
       const d = await r.json().catch(() => ({})); if (!r.ok) return setStatus(d.error || "Couldn't check the key.");
       setModels(d.models); setRec(d.recommended);
       setMain((m) => (d.models.includes(m) ? m : d.recommended.main)); setFast((m) => (d.models.includes(m) ? m : d.recommended.fast)); setVision((m) => (d.models.includes(m) ? m : d.recommended.main));
-      setStatus(`✓ Key works. ${d.models.length} models found and the best match is already selected.`);
+      setStatus(`✓ Key works. ${d.models.length} models found.`);
     }, 800);
     return () => clearTimeout(t);
   }, [key, provider, base, canFetch]);
@@ -30,9 +30,9 @@ export default function Settings() {
     setBusy(true);
     const r = await fetch("/api/ai-settings", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider, base_url: base, key, model_strong: main, model_fast: fast, model_vision: vision }) });
     const d = await r.json().catch(() => ({})); setBusy(false);
-    if (!r.ok) return setStatus(d.error || "Couldn't save."); setKey(""); setStatus("Saved. You're ready to write."); loadSaved();
+    if (!r.ok) return setSaveMsg(d.error || "Couldn't save."); setKey(""); setSaveMsg("Saved. You're ready to write."); loadSaved();
   };
-  const del = async () => { if (!confirm("Delete your saved AI key?")) return; await sb().from("user_ai_settings").delete().not("id", "is", null); setSaved(null); setModels([]); setMain(""); setStatus("Key deleted."); };
+  const del = async () => { if (!confirm("Delete your saved AI key?")) return; await sb().from("user_ai_settings").delete().not("id", "is", null); setSaved(null); setModels([]); setMain(""); setSaveMsg("Key deleted."); };
   const sel = (v: string, set: (x: string) => void, r?: string) => <select aria-label="Model" style={{ maxWidth: "100%" }} value={v} onChange={(e) => set(e.target.value)}>{models.map((m) => <option key={m} value={m}>{m}{m === r ? " (recommended)" : ""}</option>)}</select>;
   const g = G[provider];
   return <>
@@ -55,8 +55,7 @@ export default function Settings() {
         <p><small>Images are read by this model. Change it if your main model can't read images:</small><br />{sel(vision, setVision)}</p>
       </details>
       <button className="primary" disabled={busy || !main} onClick={save}>{busy ? "Saving…" : saved ? "Save changes" : "Save and connect"}</button>
-      <p role="alert" aria-live="polite">{status}</p>
+      <p role="status" aria-live="polite">{saveMsg}</p>
     </>}
-    <p><small>Database project: {(() => { try { return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(".")[0]; } catch { return "not set"; } })()}</small></p>
   </>;
 }

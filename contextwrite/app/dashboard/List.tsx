@@ -12,7 +12,7 @@ export default function List({ rows }: { rows: any[] }) {
     setItems(items.filter((x) => x.id !== r.id));
   };
   const out = async () => { await sb().auth.signOut(); location.href = "/"; };
-  if (!items.length) return <><h3>Your next idea starts here.</h3><p>Tell us what you're trying to write. You don't need to have it figured out yet.</p><Link href="/write"><button className="primary">Start Writing</button></Link><p><button onClick={out}>Log out</button></p></>;
+  if (!items.length) return <><h3>Your next idea starts here.</h3><p>Tell us what you're trying to write. You don't need to have it figured out yet.</p><Link href="/write"><button className="primary">Start Writing</button></Link></>;
   return <>
     <input aria-label="Search projects" placeholder="Search projects" value={q} onChange={(e) => setQ(e.target.value)} style={{ width: "100%", padding: 10 }} />
     <p role="alert">{err}</p>
@@ -22,6 +22,6 @@ export default function List({ rows }: { rows: any[] }) {
       <Link href={`/write?id=${r.id}`}><button>Continue</button></Link> <button onClick={() => del(r)} aria-label={`Delete ${r.title}`}>Delete</button>
     </div>)}
     {!shown.length && <p>No projects match "{q}".</p>}
-    <p><button onClick={out}>Log out</button></p>
+    
   </>;
 }

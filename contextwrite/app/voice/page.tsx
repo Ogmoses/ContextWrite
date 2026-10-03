@@ -7,6 +7,7 @@ const post = async (b: any) => { const r = await fetch("/api/voice", { method: "
 export default function Voice() {
   const [profiles, setProfiles] = useState<any[]>([]), [name, setName] = useState(""), [edited, setEdited] = useState(false), [sug, setSug] = useState(false), [samples, setSamples] = useState<string[]>([]), [cur, setCur] = useState(""), [ok, setOk] = useState(false),
     [busy, setBusy] = useState(false), [msg, setMsg] = useState(""), [saved, setSaved] = useState<any>({}), [smsg, setSmsg] = useState(""), [sel, setSel] = useState<string[]>([]), [mname, setMname] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const load = async () => { const c = sb(); const { data } = await c.from("voice_profiles").select("id,name,profile_json,created_at").order("created_at", { ascending: false }); setProfiles(data || []); const { data: s } = await c.from("settings").select("settings_json").maybeSingle(); setSaved(s?.settings_json || {}); };
   useEffect(() => { load(); }, []);
   const src = samples[0] || cur;
@@ -20,6 +21,15 @@ export default function Voice() {
   const clearAll = async () => { if (confirm("Delete ALL voice profiles and samples?")) { await sb().from("voice_profiles").delete().not("id", "is", null); setSel([]); load(); } };
   const saveCtx = async () => { const { data: { user } } = await sb().auth.getUser(); const { error } = await sb().from("settings").update({ settings_json: saved }).eq("user_id", user!.id); setSmsg(error ? "Couldn't save. Try again." : "Saved."); };
   const List = ({ t, a }: { t: string; a?: string[] }) => a?.length ? <><small>{t}</small><ul>{a.map((c, i) => <li key={i}>{typeof c === "string" ? c : JSON.stringify(c)}</li>)}</ul></> : null;
+  const merged = profiles.filter((p) => p.profile_json?.merged_from), single = profiles.filter((p) => !p.profile_json?.merged_from);
+  const row = (p: any) => { const j = p.profile_json || {}; return <div key={p.id} className="prow">
+    <input type="checkbox" checked={sel.includes(p.id)} onChange={() => setSel(sel.includes(p.id) ? sel.filter((x) => x !== p.id) : [...sel, p.id].slice(0, 8))} aria-label={`Select ${p.name} to merge`} />
+    <details><summary><b>{p.name}</b><small>{j.merged_from ? `Merged from ${j.merged_from.length} · ` : ""}Formality {j.formality}/10 · {j.preferred_language}</small></summary>
+      <small>Directness {Math.round((j.directness || 0) * 100)}% · {j.contractions ? "uses" : "avoids"} contractions</small>
+      <List t="Tone" a={j.tone} /><List t="Sentence construction" a={j.sentence_construction} />
+      {j.paragraph_style && <p style={{ margin: "6px 0" }}><small>Paragraphs: </small>{j.paragraph_style}</p>}
+      <List t="Patterns across all merged profiles" a={j.consistent_patterns} /><List t="Characteristics" a={j.characteristics} />
+      <button onClick={() => del(p.id)}>Delete</button></details></div>; };
   return <>
     <p><Link href="/dashboard">← Dashboard</Link></p>
     <h1>Your voice</h1>
@@ -33,13 +43,9 @@ export default function Voice() {
     <h2>Saved profiles</h2>
     {!profiles.length && <p>No voice profiles yet.</p>}
     {profiles.length > 1 && <p><small>Tick two or more profiles to merge them into one voice that keeps the patterns they share.</small></p>}
-    {profiles.map((p) => { const j = p.profile_json || {}; return <div key={p.id} className="card">
-      <label><input type="checkbox" checked={sel.includes(p.id)} onChange={() => setSel(sel.includes(p.id) ? sel.filter((x) => x !== p.id) : [...sel, p.id].slice(0, 8))} aria-label={`Select ${p.name} to merge`} /> <b>{p.name}</b>{j.merged_from && <small> · merged from {j.merged_from.length}</small>}</label><br />
-      <small>Formality {j.formality}/10 · directness {Math.round((j.directness || 0) * 100)}% · {j.contractions ? "uses" : "avoids"} contractions · {j.preferred_language}</small>
-      <List t="Tone" a={j.tone} /><List t="Sentence construction" a={j.sentence_construction} />
-      {j.paragraph_style && <p style={{ margin: "6px 0" }}><small>Paragraphs: </small>{j.paragraph_style}</p>}
-      <List t="Patterns across all merged profiles" a={j.consistent_patterns} /><List t="Characteristics" a={j.characteristics} />
-      <button onClick={() => del(p.id)}>Delete</button></div>; })}
+    {!!profiles.length && <div className="card"><b>{profiles.length} profile{profiles.length === 1 ? "" : "s"}</b> <small>· {merged.length} merged · tap a name to expand</small>
+      {([["Merged voices", merged], ["Individual profiles", single]] as [string, any[]][]).filter(([, a]) => a.length).map(([t, a]) => <div key={t}><p style={{ margin: "12px 0 0" }}><small>{t} ({a.length})</small></p>{(showAll ? a : a.slice(0, 3)).map(row)}</div>)}
+      {(merged.length > 3 || single.length > 3) && <button style={{ marginTop: 10 }} onClick={() => setShowAll(!showAll)}>{showAll ? "Show fewer" : `Show all ${profiles.length}`}</button>}</div>}
     {sel.length >= 2 && <div className="card"><b>Merge {sel.length} profiles</b><input type="text" value={mname} onChange={(e) => setMname(e.target.value)} placeholder="Name for the merged voice (default: Merged voice)" maxLength={60} /><button className="primary" disabled={busy} onClick={merge}>Merge selected</button><p><small>Compares sentence construction, tone, paragraph spacing and more, and keeps what they share. Your originals stay as they are.</small></p></div>}
     {!!profiles.length && <button onClick={clearAll}>Clear all voice data</button>}
     <h2>Saved context</h2>
