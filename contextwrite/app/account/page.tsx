@@ -6,6 +6,8 @@ const T = ["users", "settings", "projects", "project_context", "context_answers"
 export default function Account() {
   const [email, setEmail] = useState(""), [msg, setMsg] = useState(""), [conf, setConf] = useState(""), [busy, setBusy] = useState(false);
   useEffect(() => { sb().auth.getUser().then(({ data }) => setEmail(data.user?.email || "")); }, []);
+  const [usage, setUsage] = useState<any>(null);
+  useEffect(() => { sb().from("ai_usage").select("input_tokens,output_tokens").gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()).limit(5000).then(({ data }) => setUsage({ n: data?.length || 0, i: (data || []).reduce((a: number, r: any) => a + (r.input_tokens || 0), 0), o: (data || []).reduce((a: number, r: any) => a + (r.output_tokens || 0), 0) })); }, []);
   const exportAll = async () => {
     setBusy(true); setMsg("Collecting your data…");
     try {
@@ -34,6 +36,9 @@ export default function Account() {
     <p>Delete a single project from your <Link href="/dashboard">dashboard</Link>, or manage voice data on <Link href="/voice">Your voice</Link>. Your AI key is removed from <Link href="/settings">AI settings</Link>.</p>
     <p role="status"><small>{msg}</small></p>
     </section>
+    <section className="sec c4"><h2>AI usage</h2>
+      <p style={{ margin: "0 0 6px" }}>{usage ? <>Last 30 days: <b>{usage.n.toLocaleString("en-GB")}</b> requests · <b>{usage.i.toLocaleString("en-GB")}</b> tokens in · <b>{usage.o.toLocaleString("en-GB")}</b> tokens out</> : "Loading…"}</p>
+      <small>You're billed by your own AI provider, not by ContextWrite. Token counts come from your provider and only cover requests made since this update.</small></section>
     <section className="sec c3"><h2>Delete account</h2>
     <div>
       <p>This permanently deletes your account and everything in it: projects, drafts, versions, voice profiles, samples, uploaded files, saved context and your AI key. It can't be undone. Export your data first if you want a copy.</p>

@@ -20,6 +20,8 @@ export default function Upload({ projectId, onDone }: { projectId: string; onDon
     {docs.map((d) => { const a = d.metadata?.analysis || {}; return <div key={d.id} style={{ borderTop: "1px solid var(--line)", marginTop: 10, paddingTop: 8 }}>
       <b>{d.filename}</b> <small>· {a.kind}</small><p style={{ margin: "4px 0" }}>{a.summary}</p>
       {!!a.requirements?.length && <><small>What I found:</small><ul>{a.requirements.map((r: string, i: number) => <li key={i}>{r}</li>)}</ul></>}
+      {!!a.sources?.length && <><small>Sources:</small><ul>{a.sources.map((x: any, i: number) => <li key={i}><a href={x.url} target="_blank" rel="noopener noreferrer">{x.title}</a></li>)}</ul></>}
+      {!!a.caveats?.length && <><small>Worth double-checking:</small><ul>{a.caveats.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul></>}
       {!!a.unreadable?.length && <><small>Couldn't read confidently (please check the original):</small><ul>{a.unreadable.map((r: string, i: number) => <li key={i}>{r}</li>)}</ul></>}
       {a.word_count && a.word_count !== "unclear" && <small>Length: {a.word_count} </small>}{a.deadline && a.deadline !== "unclear" && <small>Deadline: {a.deadline}</small>}
       <br /><button onClick={() => del(d)}>Remove</button></div>; })}
