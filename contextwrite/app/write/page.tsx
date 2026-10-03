@@ -13,7 +13,7 @@ export default function Write() {
   const engine = (nextQa: any[], d = desc) => run("Figuring out what context matters…", async () => {
     const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa });
     if (!x.ok) return setErr(x.d.error === "NO_AI" ? "Add your AI provider in Settings first." : x.d.error);
-    setPid(x.d.projectId); setQa(nextQa); setR(x.d.result); setAns(""); setSummary(x.d.result.ready || !x.d.result.next_question);
+    setPid(x.d.projectId); setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); setSummary(x.d.result.ready || !x.d.result.next_question);
   });
   const gen = (instruction?: string, useSel = true) => run("Drafting from your context…", async () => {
     const sel = useSel ? draft.slice(rng[0], rng[1]) : "";
@@ -21,6 +21,7 @@ export default function Write() {
     if (!x.ok) return setErr(x.d.error); setDraft(x.d.content); setRng([0, 0]);
   });
   const [rng, setRng] = useState<[number, number]>([0, 0]);
+  const [picked, setPicked] = useState<string[]>([]);
   // Phones don't reliably announce text selection changes, so check the editor a few times a second while it's focused.
   useEffect(() => {
     const id = setInterval(() => {
@@ -44,8 +45,11 @@ export default function Write() {
     <p>{voiceSel} <a href="/voice">Manage</a></p>
     <textarea aria-label="Correct context" placeholder="Correct or add anything" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} /> <button className="primary" onClick={() => ans && engine([...qa, { q: "User correction", a: ans }])}>Update context</button> <button className="primary" disabled={!!busy} onClick={() => gen()}>Looks right — write it</button><p>{busy}</p><p role="alert">{err}</p></>;
   if (r?.next_question) { const q = r.next_question; return <><div className="meter" role="progressbar" aria-label="Context collected" aria-valuenow={r.score} aria-valuemin={0} aria-valuemax={100}><i style={{ width: r.score + "%" }} /></div><small>Context {r.score}%{r.classification?.artifact ? " · " + String(r.classification.artifact).replace(/_/g, " ") : ""}</small><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
-    {q.type === "choice" && q.options?.map((o: string) => <button key={o} onClick={() => engine([...qa, { q: q.text, a: o }])}>{o}</button>)}<br />
-    {pid && <Upload projectId={pid} onDone={() => engine(qa)} />}<textarea aria-label="Your answer" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} />
-    <button className="primary" disabled={!!busy} onClick={() => ans && engine([...qa, { q: q.text, a: ans }])}>Answer</button> <button onClick={() => engine([...qa, { q: q.text, a: "(skipped — use best judgment, mark assumptions)" }])}>Skip</button> <button onClick={() => setSummary(true)}>Generate now</button><p>{busy}</p><p role="alert">{err}</p></>; }
+    {!!q.options?.length && <div style={{ margin: "8px 0" }}>{q.options.map((o: string) => q.type === "multi"
+      ? <button key={o} className={picked.includes(o) ? "primary" : ""} aria-pressed={picked.includes(o)} onClick={() => setPicked(picked.includes(o) ? picked.filter((x) => x !== o) : [...picked, o])}>{o}</button>
+      : <button key={o} disabled={!!busy} onClick={() => engine([...qa, { q: q.text, a: o }])}>{o}</button>)}
+      <br /><small>{q.type === "multi" ? "Tap all that fit, then press Answer. " : "Tap one if it fits. "}Or write your own below.</small></div>}
+    {pid && <Upload projectId={pid} onDone={() => engine(qa)} />}<textarea aria-label="Your answer" placeholder="Something else? Write it here" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} />
+    <button className="primary" disabled={!!busy} onClick={() => { const a = [...picked, ans.trim()].filter(Boolean).join("; "); if (a) engine([...qa, { q: q.text, a }]); }}>Answer</button> <button onClick={() => engine([...qa, { q: q.text, a: "(skipped — use best judgment, mark assumptions)" }])}>Skip</button> <button onClick={() => setSummary(true)}>Generate now</button><p>{busy}</p><p role="alert">{err}</p></>; }
   return <><h1>What are you trying to write?</h1><textarea aria-label="Describe what you want to write" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ width: "100%", minHeight: 130 }} placeholder="Or just dump your thoughts here." /><br /><button className="primary" disabled={!!busy || !desc.trim()} onClick={() => engine([])}>Start Writing</button><p>{busy}</p><p role="alert">{err}</p></>;
 }
