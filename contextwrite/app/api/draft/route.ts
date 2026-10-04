@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/errors";
+import { friendly } from "@/lib/ai/errors";
+export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
 import { chat, getCfg } from "@/lib/ai";
@@ -32,5 +34,5 @@ export async function POST(req: Request) {
     await sb.from("drafts").insert({ project_id: projectId, version_number: version, name: instruction?.slice(0, 40) || "Draft", content });
     await sb.from("projects").update({ status: "draft" }).eq("id", projectId);
     return NextResponse.json({ content, version });
-  } catch (e) { console.error(e); logError("draft", e); return NextResponse.json({ error: "Something went wrong. Your project is saved. Try again." }, { status: 500 }); }
+  } catch (e) { console.error(e); logError("draft", e); return NextResponse.json({ error: friendly(e) || "Something went wrong. Your project is saved. Try again." }, { status: 500 }); }
 }

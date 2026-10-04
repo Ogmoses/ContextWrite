@@ -27,7 +27,7 @@ export async function chat(c: Cfg, system: string, user: string, json = false, i
     body = { model: c.model, messages: [{ role: "system", content: system }, { role: "user", content: img ? [{ type: "text", text: user }, { type: "image_url", image_url: { url: `data:${img.mime};base64,${img.b64}` } }] : user }], ...(json && c.provider === "openai" ? { response_format: { type: "json_object" } } : {}) };
   }
   const r = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-  if (!r.ok) { console.error("AI provider error", r.status, await r.text()); throw new Error("provider"); }
+  if (!r.ok) { console.error("AI provider error", r.status, (await r.text()).slice(0, 300)); throw Object.assign(new Error("provider"), { status: r.status }); }
   const d = await r.json();
   const u = c.provider === "anthropic" ? [d.usage?.input_tokens, d.usage?.output_tokens] : c.provider === "gemini" ? [d.usageMetadata?.promptTokenCount, d.usageMetadata?.candidatesTokenCount] : [d.usage?.prompt_tokens, d.usage?.completion_tokens];
   if (c.usageId) admin().from("ai_usage").update({ input_tokens: u[0] ?? null, output_tokens: u[1] ?? null }).eq("id", c.usageId).then(() => {}, () => {});
