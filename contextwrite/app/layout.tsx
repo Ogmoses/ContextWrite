@@ -8,7 +8,7 @@ export const metadata = { title: BRAND.name, description: "Writing built around 
 export default function L({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${serif.variable} ${sans.variable}`} style={{ "--brand": BRAND.primary, "--accent": BRAND.accent } as React.CSSProperties} suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('cw-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}" }} /></head>
+      <head><script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js');try{var t=localStorage.getItem('cw-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}" }} /></head>
       <body suppressHydrationWarning><Shell>{children}</Shell></body>
     </html>
   );

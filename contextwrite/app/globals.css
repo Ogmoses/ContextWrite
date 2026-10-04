@@ -110,3 +110,45 @@ html{scroll-behavior:smooth}@media(prefers-reduced-motion:reduce){html{scroll-be
 .ctaw{padding-top:56px}.cta{border-radius:28px;padding:40px 24px;text-align:center;background:linear-gradient(150deg,var(--brand),color-mix(in srgb,var(--brand) 55%,#c070ec));color:#fff}.cta h2{color:#fff;margin:0 0 8px}.cta p{margin:0 auto 20px;opacity:.88;max-width:44ch}.cta button{background:var(--accent);color:#2a0a40;border:0;margin:0}
 .foot2{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;padding-top:36px;padding-bottom:40px;color:var(--mute);font-size:14px}
 @media(min-width:760px){.navlinks{display:flex}.hero2{grid-template-columns:1.1fr .9fr;align-items:center;padding-top:72px;padding-bottom:56px}.how{grid-template-columns:1fr 1fr}.fgrid{grid-template-columns:1fr 1fr 1fr}.fcard.big{grid-column:1/-1}.wgrid{grid-template-columns:repeat(4,1fr);gap:24px}.faq{grid-template-columns:.8fr 1.2fr;gap:40px}}
+.ld button{transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,border-color .25s}.ld button:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(76,5,133,.18)}.ld button:active{transform:scale(.98)}
+.fcard,.how li,.uses span,.wic{transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s,border-color .35s}
+.fcard:hover,.how li:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(76,5,133,.12)}.uses span:hover{transform:translateY(-2px);border-color:var(--btn)}.wi:hover .wic{transform:rotate(-6deg) scale(1.07)}
+.fcard.big,.cta{background-size:180% 180%}
+@media(prefers-reduced-motion:no-preference){
+@keyframes up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes inL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes inR{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.55) rotate(-10deg)}to{opacity:1;transform:none}}
+@keyframes scl{from{opacity:0;transform:scale(.95) translateY(18px)}to{opacity:1;transform:none}}
+@keyframes drop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes drift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(219,181,238,.55)}70%,100%{box-shadow:0 0 0 16px rgba(219,181,238,0)}}
+:root{--ease:cubic-bezier(.2,.7,.2,1)}
+.ldnav{animation:drop .7s var(--ease) both}
+.hero2 .eyebrow,.hero2 h1,.hero2 .lead2,.hero2 p:not(.lead2),.hero2 small{animation:up .9s var(--ease) both}
+.hero2 .eyebrow{animation-delay:.05s}.hero2 h1{animation-delay:.15s}.hero2 .lead2{animation-delay:.28s}.hero2 p:not(.lead2){animation-delay:.42s}.hero2 small{animation-delay:.55s}
+.mock{animation:inR 1.1s var(--ease) .25s both,float 7s ease-in-out 1.5s infinite}
+.msegs i{transform-origin:left;animation:grow .7s var(--ease) both}.msegs i:nth-child(1){animation-delay:.9s}.msegs i:nth-child(2){animation-delay:1.05s}.msegs i:nth-child(3){animation-delay:1.2s}.msegs i:nth-child(4){animation-delay:1.35s}.msegs i:nth-child(5){animation-delay:1.45s}.msegs i:nth-child(6){animation-delay:1.55s}
+.mock .mchips span{animation:pop .55s cubic-bezier(.2,.8,.3,1.3) both}.mock .mchips span:nth-child(1){animation-delay:1.6s}.mock .mchips span:nth-child(2){animation-delay:1.7s}.mock .mchips span:nth-child(3){animation-delay:1.8s}.mock .mchips span:nth-child(4){animation-delay:1.9s}.mock .mchips span:nth-child(5){animation-delay:2s}
+.mock .mnote{animation:up .8s var(--ease) 2.2s both}
+:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(1){--d:.05s}:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(2){--d:.15s}:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(3){--d:.25s}:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(4){--d:.35s}:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(5){--d:.45s}:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(6){--d:.55s}:is(.how,.fgrid,.wgrid,.uses,.stripin,.cmp tbody,.faq>div:last-child)>:nth-child(n+7){--d:.65s}
+.js .sect :is(h2,.sub),.js .strip span,.js .how li,.js .fcard,.js .cmp tbody tr,.js .wi,.js .uses span,.js .faq details,.js .cta,.js .foot2{opacity:0}
+.js .sect.in :is(h2,.sub){opacity:1;animation:up .8s var(--ease) backwards}.js .sect.in .sub{animation-delay:.1s}
+.js .strip.in span{opacity:1;animation:up .7s var(--ease) backwards;animation-delay:var(--d)}
+.js .sect.in .how li{opacity:1;animation:inL .8s var(--ease) backwards;animation-delay:calc(var(--d) + .15s)}
+.js .sect.in .how li b{animation:pop .6s cubic-bezier(.2,.8,.3,1.3) backwards;animation-delay:calc(var(--d) + .4s)}
+.js .sect.in .fcard{opacity:1;animation:scl .9s var(--ease) backwards;animation-delay:calc(var(--d) + .15s)}
+.js .sect.in .fcard.big{animation:scl .9s var(--ease) .15s backwards,drift 16s ease-in-out 1s infinite}
+.js .sect.in .fcard.big .mchips span{animation:pop .5s cubic-bezier(.2,.8,.3,1.3) backwards}.js .sect.in .fcard.big .mchips span:nth-child(1){animation-delay:.7s}.js .sect.in .fcard.big .mchips span:nth-child(2){animation-delay:.8s}.js .sect.in .fcard.big .mchips span:nth-child(3){animation-delay:.9s}.js .sect.in .fcard.big .mchips span:nth-child(4){animation-delay:1s}
+.js .sect.in .cmp tbody tr{opacity:1;animation:up .7s var(--ease) backwards;animation-delay:calc(var(--d) + .2s)}
+.js .sect.in .wi{opacity:1;animation:up .8s var(--ease) backwards;animation-delay:calc(var(--d) + .1s)}
+.js .sect.in .wic{animation:pop .7s cubic-bezier(.2,.8,.3,1.3) backwards;animation-delay:calc(var(--d) + .3s)}
+.js .sect.in .uses span{opacity:1;animation:scl .6s var(--ease) backwards;animation-delay:calc(var(--d) + .1s)}
+.js .faq.in details{opacity:1;animation:inR .8s var(--ease) backwards;animation-delay:calc(var(--d) + .15s)}
+.faq details[open] p{animation:up .45s var(--ease)}
+.js .ctaw.in .cta{opacity:1;animation:scl 1s var(--ease) backwards,drift 18s ease-in-out 1s infinite}
+.js .ctaw.in .cta button{animation:ring 3.2s ease-out 1.4s infinite}
+.js .foot2.in{opacity:1;animation:up .9s var(--ease) backwards}
+}

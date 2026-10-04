@@ -2,6 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import Icon from "@/components/Icon";
 import { BRAND } from "@/lib/brand";
+import Reveal from "@/components/Reveal";
 
 const WHY = [
   ["search", "It understands first", "Asks about your situation, audience, tone and purpose before a single word is written."],
@@ -19,6 +20,7 @@ const FAQ = [
 ];
 export default function Home() {
   return <div className="ld">
+    <Reveal />
     <nav className="ldnav" aria-label="Main"><div className="w2 navin">
       <Link href="/" className="brand"><Logo size={32} />{BRAND.name}</Link>
       <div className="navlinks"><a href="#how">How it works</a><a href="#features">Features</a><a href="#why">Why choose us</a><a href="#faq">FAQ</a></div>
