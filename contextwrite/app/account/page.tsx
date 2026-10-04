@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Feedback from "@/components/Feedback";
 import { sb } from "@/lib/supabase/browser";
 const T = ["users", "settings", "projects", "project_context", "context_answers", "drafts", "voice_profiles", "writing_samples", "documents"];
 export default function Account() {
@@ -45,5 +46,6 @@ export default function Account() {
       <label>Type DELETE to confirm<input type="text" value={conf} onChange={(e) => setConf(e.target.value)} autoComplete="off" /></label>
       <button disabled={busy || conf !== "DELETE"} onClick={del}>Delete my account permanently</button>
     </div></section>
+    <Feedback />
   </>;
 }

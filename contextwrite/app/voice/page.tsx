@@ -19,7 +19,7 @@ export default function Voice() {
   const merge = async () => { setBusy(true); setMsg("Comparing your profiles…"); const x = await post({ action: "merge", ids: sel, name: mname.trim() || "Merged voice" }); setBusy(false); if (!x.ok) return setMsg(x.d.error); setSel([]); setMname(""); setMsg("Merged profile created. Your originals are untouched."); load(); };
   const del = async (id: string) => { if (confirm("Delete this voice profile and its samples?")) { await sb().from("voice_profiles").delete().eq("id", id); setSel(sel.filter((x) => x !== id)); load(); } };
   const clearAll = async () => { if (confirm("Delete ALL voice profiles and samples?")) { await sb().from("voice_profiles").delete().not("id", "is", null); setSel([]); load(); } };
-  const saveCtx = async () => { const { data: { user } } = await sb().auth.getUser(); const { error } = await sb().from("settings").update({ settings_json: saved }).eq("user_id", user!.id); setSmsg(error ? "Couldn't save. Try again." : "Saved."); };
+  const saveCtx = async () => { const { data: { user } } = await sb().auth.getUser(); const { data: cur } = await sb().from("settings").select("settings_json").maybeSingle(); const { error } = await sb().from("settings").update({ settings_json: { ...saved, onboarding: cur?.settings_json?.onboarding, onboarded: cur?.settings_json?.onboarded } }).eq("user_id", user!.id); setSmsg(error ? "Couldn't save. Try again." : "Saved."); };
   const List = ({ t, a }: { t: string; a?: string[] }) => a?.length ? <><small>{t}</small><ul>{a.map((c, i) => <li key={i}>{typeof c === "string" ? c : JSON.stringify(c)}</li>)}</ul></> : null;
   const merged = profiles.filter((p) => p.profile_json?.merged_from), single = profiles.filter((p) => !p.profile_json?.merged_from);
   const row = (p: any) => { const j = p.profile_json || {}; return <div key={p.id} className="prow">
@@ -34,13 +34,13 @@ export default function Voice() {
     <p><Link href="/dashboard">← Dashboard</Link></p>
     <h1>Your voice</h1>
     <p>Paste things you've written yourself: messages, emails, essays, notes. ContextWrite studies your habits (sentence construction, tone, paragraph spacing, directness) and uses them to draft in your voice. Don't paste text written by others.</p>
-    <section className="sec c1"><textarea aria-label="Writing sample" placeholder="Paste a sample (80+ characters)" value={cur} onChange={(e) => setCur(e.target.value)} style={{ minHeight: 120 }} />
+    <section className="sec c1" data-coach="voice-samples"><textarea aria-label="Writing sample" placeholder="Paste a sample (80+ characters)" value={cur} onChange={(e) => setCur(e.target.value)} style={{ minHeight: 120 }} />
     <p><small>{all.length} sample{all.length === 1 ? "" : "s"} ready. More varied samples give a better profile; 3 or more is ideal. Use "Add another sample" to add more before creating.</small></p>
     <label>Profile name <small>{sug ? "Suggesting a name…" : "suggested from your writing, edit freely"}</small><input type="text" value={name} onChange={(e) => { setName(e.target.value); setEdited(true); }} placeholder="Name appears after you paste a sample" maxLength={60} /></label>
     <label><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /> I agree to save these samples privately in my account. I can delete them anytime.</label>
     <p><button onClick={add}>Add another sample</button> <button onClick={suggest} disabled={sug || src.trim().length < 80}>Suggest a name</button> <button className="primary" disabled={!ok || busy || !all.length} onClick={analyze}>Create voice profile</button></p>
     <p role="status">{msg}</p></section>
-    <section className="sec c2">
+    <section className="sec c2" data-coach="voice-profiles">
     <h2>Saved profiles</h2>
     {!profiles.length && <p>No voice profiles yet.</p>}
     {profiles.length > 1 && <p><small>Tick two or more profiles to merge them into one voice that keeps the patterns they share.</small></p>}

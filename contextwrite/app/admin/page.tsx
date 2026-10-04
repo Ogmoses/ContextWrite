@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { userClient, admin } from "@/lib/supabase/server";
+import AdminFeedback from "./AdminFeedback";
 export const dynamic = "force-dynamic";
 const n = (x: any) => Number(x || 0).toLocaleString("en-GB");
 const Obj = ({ o }: { o: Record<string, number> }) => { const e = Object.entries(o || {}).sort((a, b) => b[1] - a[1]); return e.length ? <ul>{e.map(([k, v]) => <li key={k}>{k}: <b>{n(v)}</b></li>)}</ul> : <p><small>None yet.</small></p>; };
@@ -15,6 +16,7 @@ export default async function Admin() {
   const ms = Date.now() - t0;
   await a.from("audit_log").insert({ actor_id: user.id, action: "admin_view_stats", target: "admin_stats" });
   const { data: log } = await a.from("audit_log").select("action,created_at").order("created_at", { ascending: false }).limit(8);
+  const { data: fb } = await a.from("feedback").select("id,kind,message,ok_to_publish,status,created_at,users(email,name)").order("created_at", { ascending: false }).limit(60);
   if (error || !s) return <><h1>Admin</h1><p role="alert">Couldn't load stats. Check that the admin_stats function exists in your database.</p></>;
   const max = Math.max(1, ...(s.daily || []).map((d: any) => d.ai));
   const rate = s.ai_7d ? ((s.errors_7d / s.ai_7d) * 100).toFixed(1) : "0.0";
@@ -40,6 +42,8 @@ export default async function Admin() {
     <h2>Breakdown (30 days)</h2>
     <div className="card"><b>By request type</b><Obj o={s.ai_by_type} /><b>By model</b><Obj o={s.ai_by_model} /><b>Connected providers</b><Obj o={s.providers} /></div>
     {!!Object.keys(s.errors_by_route || {}).length && <><h2>Errors by route (7 days)</h2><div className="card"><Obj o={s.errors_by_route} /></div></>}
+    <h2>Feedback ({(fb || []).filter((x: any) => x.status === "new").length} new)</h2>
+    <AdminFeedback items={(fb as any[]) || []} />
     <h2>Audit log</h2>
     <div className="card"><ul>{(log || []).map((l: any, i: number) => <li key={i}>{l.action} <small>· {String(l.created_at).slice(0, 16).replace("T", " ")}</small></li>)}</ul></div>
     <p><small>Token counts and costs aren't tracked yet, only request counts.</small></p>

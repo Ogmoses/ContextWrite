@@ -13,8 +13,9 @@ export async function listModels(provider: string, key: string, base?: string | 
   else if (provider === "openai") ids = (d.data || []).map((m: any) => m.id).filter((x: string) => /^(gpt|o\d|chatgpt)/.test(x) && !/embed|whisper|tts|audio|realtime|transcribe|image|moderation|search|codex|instruct/i.test(x));
   else ids = (d.data || []).map((m: any) => m.id);
   ids = [...new Set(ids)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  if (provider === "gemini" && !ids.includes("gemini-flash-lite-latest")) ids.unshift("gemini-flash-lite-latest");
   const pick = (res: RegExp[]) => { for (const re of res) { const x = latest(ids, re); if (x) return x; } };
-  const P: any = { anthropic: [[/sonnet/], [/haiku/]], gemini: [[/pro(?!.*(preview|exp))/, /flash(?!.*(preview|exp))/], [/flash-lite/, /flash/]], openai: [[/^gpt-[\d.]+$/], [/mini/]] };
+  const P: any = { anthropic: [[/sonnet/], [/haiku/]], gemini: [[/^gemini-flash-lite-latest$/, /flash-lite(?!.*(preview|exp))/, /flash(?!.*(preview|exp))/], [/^gemini-flash-lite-latest$/, /flash-lite/, /flash/]], openai: [[/^gpt-[\d.]+$/], [/mini/]] };
   const [m, f] = P[provider] || [[/./], [/./]];
   const main = pick(m) || ids[ids.length - 1] || "";
   return { models: ids, recommended: { main, fast: pick(f) || main } };

@@ -6,6 +6,7 @@ import Icon from "./Icon";
 import { useEffect, useState } from "react";
 import { sb } from "@/lib/supabase/browser";
 import { BRAND } from "@/lib/brand";
+import Coach from "./Coach";
 export default function Shell({ children }: { children: React.ReactNode }) {
   const p = usePathname() || "/", auth = p.startsWith("/login"), pill = !auth && p !== "/";
   const [dark, setDark] = useState(false), [authed, setAuthed] = useState(false);
@@ -24,6 +25,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {authed && <Link href="/settings" className="ib" aria-label="AI settings" title="AI settings"><Icon n="sliders" /></Link>}
       {authed && <button className="ib" aria-label="Log out" onClick={out}><Icon n="logout" /></button>}</div></header>}
     {auth ? <div className="authwrap">{children}</div> : <main>{children}</main>}
+    {!auth && <Coach />}
     {pill && <nav className="pill" aria-label="Main">
       <Link href="/dashboard" className={on("/dashboard")}><Icon n="home" />Home</Link>
       <Link href="/write" className="plus" aria-label="New writing"><Icon n="plus" size={24} /></Link>
