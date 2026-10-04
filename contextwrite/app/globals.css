@@ -82,3 +82,5 @@ details.sec>summary::-webkit-details-marker{display:none}
 details.sec>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);margin-right:4px}
 details.sec[open]>summary::after{transform:rotate(-135deg)}
 details.sec[open]>summary{margin-bottom:8px}
+.dbar{grid-template-columns:minmax(0,1fr)}.dbar>*{min-width:0}.fpill{max-width:100%}
+html,body{max-width:100%;overflow-x:clip}
