@@ -23,6 +23,7 @@ const P: Record<string, string> = {
   copy: "M9 9h11v11H9zM5 15V5h10",
   check: "M5 12.500 10 17 19 7",
   sliders: "M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6",
+  lock: "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3 2",
 };
 export default function Icon({ n, size = 20 }: { n: string; size?: number }) {

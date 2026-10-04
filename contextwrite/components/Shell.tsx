@@ -16,6 +16,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   }, [p]);
   const flip = () => { const n = dark ? "light" : "dark"; document.documentElement.dataset.theme = n; try { localStorage.setItem("cw-theme", n); } catch {} setDark(!dark); };
   const out = async () => { await sb().auth.signOut(); location.href = "/"; };
+  if (p === "/") return <>{children}</>;
   const on = (h: string) => p.startsWith(h) ? "on" : "";
   return <>
     {!auth && <header className="top"><div className="hi"><Link href="/" className="brand"><Logo size={30} />{BRAND.name}</Link>
