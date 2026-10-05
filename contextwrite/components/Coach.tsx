@@ -47,6 +47,8 @@ export default function Coach() {
     addEventListener("online", online); addEventListener("cw-restart-tour", restart);
     return () => { removeEventListener("online", online); removeEventListener("cw-restart-tour", restart); };
   }, []);
+  useEffect(() => { const lock = !!s && s.i === 0 && hasAi === false; document.body.classList.toggle("onb-lock", lock); document.body.dataset.path = path; return () => document.body.classList.remove("onb-lock"); }, [s, hasAi, path]);
+  useEffect(() => { if (s?.i === 1 && hasAi && path === "/settings") { const t = setTimeout(() => router.push("/voice"), 1800); return () => clearTimeout(t); } }, [s?.i, hasAi, path]);
   const st = s && s.i < STEPS.length ? STEPS[s.i] : null, sub = st?.subs[s!.sub] || null, active = !!(st && sub && path === st.path), last = !!st && s!.sub >= st.subs.length - 1;
   const skip = () => s && persist({ i: s.i + 1, sub: 0, ts: 0 });
   const next = () => s && (last ? persist({ i: s.i + 1, sub: 0, ts: 0 }) : persist({ ...s, sub: s.sub + 1 }));
@@ -89,6 +91,6 @@ export default function Coach() {
       <div className="crow"><button className="primary sm" onClick={next}>{last ? "Got it" : "Next"}</button><button className="sm" onClick={skip}>Skip this step</button></div>
     </div>;
   }
-  if (st && !path.startsWith("/write")) return <div className="coach fb toast" role="status"><h4>Next: {st.name}</h4><div className="crow"><button className="primary sm" onClick={() => router.push(st.path)}>Take me there</button><button className="sm" onClick={skip}>Skip</button></div></div>;
+  if (st && !path.startsWith("/write")) return <div className="coach fb toast" role="status"><h4>{s!.i === 1 && hasAi ? "AI connected ✓ " : ""}Next: {st.name}</h4><div className="crow"><button className="primary sm" onClick={() => router.push(st.path)}>Take me there</button><button className="sm" onClick={skip}>Skip</button></div></div>;
   return null;
 }

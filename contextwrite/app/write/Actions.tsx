@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { sb } from "@/lib/supabase/browser";
 const A: [string, string, boolean][] = [
   ["Improve", "Improve clarity and flow without changing the meaning.", true],
   ["Shorten", "Shorten by about a third, keeping the key points.", true],
@@ -21,10 +22,11 @@ export default function Actions({ projectId, draft, range, onClear, setDraft, op
     const r = await fetch("/api/draft", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ projectId, mode, instruction, selection: has ? draft.slice(s, e) : draft, current: draft, ...opts }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error); return d.content as string;
   };
-  const act = async ([, ins, selOk]: [string, string, boolean]) => {
+  const saveVer = async (text: string, name: string) => { try { const c = sb(); const { data: l } = await c.from("drafts").select("version_number").eq("project_id", projectId).order("version_number", { ascending: false }).limit(1); await c.from("drafts").insert({ project_id: projectId, version_number: (l?.[0]?.version_number || 0) + 1, name, content: text }); } catch {} };
+  const act = async ([lab, ins, selOk]: [string, string, boolean]) => {
     if (!(selOk && has)) return onFull(ins, false);
     setBusy(true); setMsg(""); setWhy("");
-    try { const t = await call("passage", ins); setPrev(draft); setDraft(draft.slice(0, s) + t + draft.slice(e)); onClear(); } catch (x: any) { setMsg(x.message || "Something went wrong. Your draft is unchanged."); }
+    try { const t = await call("passage", ins); setPrev(draft); const nt = draft.slice(0, s) + t + draft.slice(e); setDraft(nt); onClear(); await saveVer(nt, lab); } catch (x: any) { setMsg(x.message || "Something went wrong. Your draft is unchanged."); }
     setBusy(false);
   };
   const explain = async () => { setBusy(true); setMsg(""); try { setWhy(await call("explain", "Explain this section")); } catch (x: any) { setMsg(x.message || "Something went wrong."); } setBusy(false); };

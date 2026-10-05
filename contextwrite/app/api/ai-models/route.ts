@@ -15,6 +15,6 @@ export async function POST(req: Request) {
     return NextResponse.json(await listModels(provider, k, base_url));
   } catch (e: any) {
     console.error("model list failed", e?.status);
-    return NextResponse.json({ error: e?.status === 401 || e?.status === 403 || e?.status === 400 ? "That key was rejected. Check you copied all of it." : "Couldn't reach that provider. Check the details and try again." }, { status: 400 });
+    return NextResponse.json({ error: e?.status === 401 || e?.status === 403 || e?.status === 400 ? "That key was rejected. Check you copied all of it." : provider === "openai_compatible" ? "Couldn't load models from that address. It should be the API address, like https://openrouter.ai/api/v1 (ending in /v1), not a dashboard page." : "Couldn't reach that provider. Check the details and try again." }, { status: 400 });
   }
 }

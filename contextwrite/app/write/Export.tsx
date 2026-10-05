@@ -5,15 +5,15 @@ import { sb } from "@/lib/supabase/browser";
 const clean = (t: string) => t.replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
 function save(blob: Blob, name: string) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 export default function Export({ content, projectId }: { content: string; projectId: string | null }) {
-  const [name, setName] = useState(""), [edited, setEdited] = useState(false), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false), [mounted, setMounted] = useState(false), [sug, setSug] = useState(false);
+  const [name, setName] = useState(""), [edited, setEdited] = useState(false), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false), [mounted, setMounted] = useState(false), [sug, setSug] = useState(false), [loaded, setLoaded] = useState(false);
   const ready = content.trim().length >= 80, base = clean(name) || "Draft";
-  useEffect(() => setMounted(true), []);
+  useEffect(() => { setMounted(true); if (!projectId) { setLoaded(true); return; } sb().from("projects").select("title,initial_description").eq("id", projectId).maybeSingle().then(({ data }) => { const t = data?.title || "", d0 = (data?.initial_description || "").slice(0, 60); if (t && t !== d0) { setName(t); setEdited(true); } setLoaded(true); }, () => setLoaded(true)); }, []);
   const suggest = async () => {
     if (!ready) return; setSug(true);
-    try { const r = await fetch("/api/title", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ content }) }); const d = await r.json(); if (r.ok && d.title) { setName(clean(d.title)); setEdited(false); } } catch {}
+    try { const r = await fetch("/api/title", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ content }) }); const d = await r.json(); if (r.ok && d.title) { setName(clean(d.title)); setEdited(false); if (projectId) sb().from("projects").update({ title: clean(d.title) }).eq("id", projectId).then(() => {}, () => {}); } } catch {}
     setSug(false);
   };
-  useEffect(() => { if (ready && !edited && !name) suggest(); }, [ready, edited, name]);
+  useEffect(() => { if (loaded && ready && !edited && !name) suggest(); }, [loaded, ready, edited, name]);
   const rename = async () => { const n = clean(name); setName(n); if (projectId && n) await sb().from("projects").update({ title: n }).eq("id", projectId); };
   const docx = async () => {
     setBusy(true); setMsg("");

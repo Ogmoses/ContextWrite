@@ -32,6 +32,5 @@ export default async function Dash() {
     </div>
     <section className="sec c3"><h3>Your projects</h3>
     <List rows={rows} /></section>
-    <Feedback />
   </>;
 }

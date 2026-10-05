@@ -18,15 +18,15 @@ export default function Write() {
   const [desc, setDesc] = useState(""), [pid, setPid] = useState<string | null>(null), [qa, setQa] = useState<any[]>([]), [r, setR] = useState<any>(null), [ans, setAns] = useState(""),
     [draft, setDraft] = useState(""), [ins, setIns] = useState(""), [busy, setBusy] = useState(""), [err, setErr] = useState(""), [tone, setTone] = useState("Natural"), [voice, setVoice] = useState("Balanced"), [summary, setSummary] = useState(false);
   const run = async (label: string, fn: () => Promise<void>) => { setBusy(label); setErr(""); try { await fn(); } catch { setErr("Something went wrong. Your project is saved. Try again."); } setBusy(""); };
-  const engine = (nextQa: any[], d = desc) => run("Figuring out what context matters…", async () => {
-    const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa });
+  const engine = (nextQa: any[], d = desc, deepen = false) => run("Figuring out what context matters…", async () => {
+    const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa, deepen });
     if (!x.ok) return setErr(x.d.error === "NO_AI" ? "Add your AI provider in Settings first." : x.d.error);
-    setPid(x.d.projectId); setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); setSummary(x.d.result.ready || !x.d.result.next_question);
+    setPid(x.d.projectId); setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); setSummary(!deepen && (x.d.result.ready || !x.d.result.next_question));
   });
   const gen = (instruction?: string, useSel = true) => run("Drafting from your context…", async () => {
     const sel = useSel ? draft.slice(rng[0], rng[1]) : "";
     const x = await post("/api/draft", { projectId: pid, instruction, selection: sel, current: instruction ? draft : undefined, tone, voice, voiceId, useSaved, lang });
-    if (!x.ok) return setErr(x.d.error); setDraft(x.d.content); setRng([0, 0]);
+    if (!x.ok) return setErr(x.d.error); setDraft(x.d.content); setRng([0, 0]); setIns("");
   });
   const [rng, setRng] = useState<[number, number]>([0, 0]);
   const [picked, setPicked] = useState<string[]>([]);
@@ -104,7 +104,7 @@ export default function Write() {
     {pid && <Plan projectId={pid} />}
     <p>{voiceSel} <a href="/voice">Manage</a></p>
     <p>{langSel}</p>
-    <textarea aria-label="Correct context" placeholder="Correct or add anything" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} /> <button className="primary" onClick={() => ans && engine([...qa, { q: "User correction", a: ans }])}>Update context</button> <button className="primary" disabled={!!busy} onClick={() => gen()}>Looks right — write it</button><p>{busy}</p><p role="alert">{err}</p></>;
+    <textarea aria-label="Correct context" placeholder="Correct or add anything" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} /> <button className="primary" onClick={() => ans && engine([...qa, { q: "User correction", a: ans }])}>Update context</button> <button className="primary" disabled={!!busy} onClick={() => gen()}>Looks right — write it</button> <button disabled={!!busy} onClick={() => engine(qa, desc, true)}>Ask more questions</button><p>{busy}</p><p role="alert">{err}</p></>;
   if (r?.next_question) { const q = r.next_question; return <><QBar qa={qa} score={r.score || 0} title={String(r.classification?.artifact || "").replace(/_/g, " ")} busy={!!busy} onJump={(i) => engine(qa.slice(0, i))} /><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
     {!!q.options?.length && <div style={{ margin: "8px 0" }}>{q.options.map((o: string) => q.type === "multi"
       ? <button key={o} className={picked.includes(o) ? "primary" : ""} aria-pressed={picked.includes(o)} onClick={() => setPicked(picked.includes(o) ? picked.filter((x) => x !== o) : [...picked, o])}>{o}</button>
@@ -112,5 +112,5 @@ export default function Write() {
       <br /><small>{q.type === "multi" ? "Tap all that fit, then press Answer. " : "Tap one if it fits. "}Or write your own below.</small></div>}
     {pid && <><Upload key={docRev} projectId={pid} onDone={() => engine(qa)} /><Research projectId={pid} onDone={() => { setDocRev((n) => n + 1); engine(qa); }} /></>}<textarea aria-label="Your answer" placeholder="Something else? Write it here" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} />
     <button className="primary" disabled={!!busy} onClick={() => { const a = [...picked, ans.trim()].filter(Boolean).join("; "); if (a) engine([...qa, { q: q.text, a }]); }}>Answer</button> <button onClick={() => engine([...qa, { q: q.text, a: "(skipped — use best judgment, mark assumptions)" }])}>Skip</button> <button onClick={() => setSummary(true)}>Generate now</button><p>{busy}</p><p role="alert">{err}</p></>; }
-  return <><h1>What are you trying to write?</h1><textarea aria-label="Describe what you want to write" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ width: "100%", minHeight: 130 }} placeholder="Or just dump your thoughts here." /><br /><button className="primary" disabled={!!busy || !desc.trim()} onClick={() => engine([])}>Start Writing</button><p>{busy}</p><p role="alert">{err}</p><BrainDump onStart={(d) => { setDesc(d); engine([], d); }} /></>;
+  return <><h1>What are you trying to write?</h1><textarea aria-label="Describe what you want to write" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ width: "100%", minHeight: 130 }} placeholder="e.g. I want to write an essay about why habit streaks fail, for young readers." /><br /><button className="primary" disabled={!!busy || !desc.trim()} onClick={() => engine([])}>Start Writing</button><p>{busy}</p><p role="alert">{err}</p><BrainDump onStart={(d) => { setDesc(d); engine([], d); }} /></>;
 }

@@ -46,6 +46,5 @@ export default function Account() {
       <label>Type DELETE to confirm<input type="text" value={conf} onChange={(e) => setConf(e.target.value)} autoComplete="off" /></label>
       <button disabled={busy || conf !== "DELETE"} onClick={del}>Delete my account permanently</button>
     </div></section>
-    <Feedback />
   </>;
 }
