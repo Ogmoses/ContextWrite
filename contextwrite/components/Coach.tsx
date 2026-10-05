@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { sb } from "@/lib/supabase/browser";
-type S = { i: number; sub: number; ts: number; dirty?: boolean };
+type S = { i: number; sub: number; ts: number; dirty?: boolean; f?: boolean; w?: number; m?: boolean; u?: string };
 const K = "cw-onb";
 const STEPS = [
   { path: "/settings", name: "Connect your AI", subs: [
@@ -18,16 +18,16 @@ const STEPS = [
 export default function Coach() {
   const path = usePathname() || "/", router = useRouter();
   const [s, setS] = useState<S | null>(null), [hasAi, setHasAi] = useState<boolean | null>(null), [pos, setPos] = useState<any>(null);
-  const ref = useRef<S | null>(null); ref.current = s;
+  const ref = useRef<S | null>(null); ref.current = s; const uid = useRef("");
   // Save locally first (survives refresh/offline), then sync to the account.
   const persist = useCallback(async (n: S) => {
     n = { ...n, ts: Date.now() }; setS(n);
-    try { localStorage.setItem(K, JSON.stringify({ ...n, dirty: true })); } catch {}
+    try { localStorage.setItem(K, JSON.stringify({ ...n, u: uid.current, dirty: true })); } catch {}
     try {
       const c = sb(), { data: { user } } = await c.auth.getUser(); if (!user) throw 0;
       const { data } = await c.from("settings").select("settings_json").maybeSingle();
       const { error } = await c.from("settings").upsert({ user_id: user.id, settings_json: { ...(data?.settings_json || {}), onboarding: n } }, { onConflict: "user_id" }); if (error) throw error;
-      localStorage.setItem(K, JSON.stringify({ ...n, dirty: false }));
+      localStorage.setItem(K, JSON.stringify({ ...n, u: uid.current, dirty: false }));
     } catch {}
   }, []);
   useEffect(() => {
@@ -35,19 +35,20 @@ export default function Coach() {
       let local: S | null = null; try { local = JSON.parse(localStorage.getItem(K) || "null"); } catch {}
       try {
         const c = sb(), { data: { user } } = await c.auth.getUser(); if (!user) return;
+        uid.current = user.id; if (local && local.u !== user.id) local = null;
         const { data } = await c.from("settings").select("settings_json").maybeSingle(), sj = data?.settings_json || {}, db: S | null = sj.onboarding || null;
         let cur: S;
-        if (local?.dirty && (!db || local.ts >= db.ts)) cur = local; else if (db) cur = db; else if (sj.onboarded) cur = { i: 3, sub: 0, ts: Date.now() }; else cur = local || { i: 0, sub: 0, ts: Date.now() };
+        if (local?.dirty && (!db || local.ts >= db.ts)) cur = local; else if (db) cur = db; else if (sj.onboarded) cur = { i: 3, sub: 0, ts: Date.now() }; else cur = local || { i: 0, sub: 0, f: true, w: 0, ts: Date.now() };
         setS(cur); if (cur !== db) persist(cur);
         const { data: a } = await c.from("user_ai_settings").select("provider").maybeSingle(); setHasAi(!!a);
       } catch { if (local) setS(local); }
     })();
     const online = () => { try { const l = JSON.parse(localStorage.getItem(K) || "null"); if (l?.dirty) persist(l); } catch {} };
-    const restart = () => { persist({ i: 0, sub: 0, ts: 0 }); router.push("/settings"); };
-    addEventListener("online", online); addEventListener("cw-restart-tour", restart);
-    return () => { removeEventListener("online", online); removeEventListener("cw-restart-tour", restart); };
+    const restart = () => { persist({ i: 0, sub: 0, f: false, w: -1, m: true, ts: 0 }); router.push("/settings"); };
+    const setOnb = (e: any) => persist({ ...(ref.current || { i: 0, sub: 0, ts: 0 }), ...(e.detail || {}) });
+    addEventListener("online", online); addEventListener("cw-restart-tour", restart); addEventListener("cw-onb-set", setOnb);
+    return () => { removeEventListener("online", online); removeEventListener("cw-restart-tour", restart); removeEventListener("cw-onb-set", setOnb); };
   }, []);
-  useEffect(() => { const lock = !!s && s.i === 0 && hasAi === false; document.body.classList.toggle("onb-lock", lock); document.body.dataset.path = path; return () => document.body.classList.remove("onb-lock"); }, [s, hasAi, path]);
   useEffect(() => { if (s?.i === 1 && hasAi && path === "/settings") { const t = setTimeout(() => router.push("/voice"), 1800); return () => clearTimeout(t); } }, [s?.i, hasAi, path]);
   const st = s && s.i < STEPS.length ? STEPS[s.i] : null, sub = st?.subs[s!.sub] || null, active = !!(st && sub && path === st.path), last = !!st && s!.sub >= st.subs.length - 1;
   const skip = () => s && persist({ i: s.i + 1, sub: 0, ts: 0 });
@@ -55,8 +56,8 @@ export default function Coach() {
   // First-time users go straight to AI settings; finishing a step is detected automatically.
   useEffect(() => {
     if (!s) return;
-    if (s.i === 0 && hasAi === false && path === "/dashboard") router.replace("/settings");
-    if (s.i === 0 && hasAi) persist({ i: 1, sub: 0, ts: 0 });
+    if (s.f && hasAi === false && !path.startsWith("/welcome") && path !== "/settings") router.replace(s.w !== undefined && s.w >= 0 ? "/welcome" : "/settings?first=1");
+    if (s.i === 0 && hasAi && !s.m) persist({ i: 1, sub: 0, f: false, ts: 0 });
     if (s.i === 2 && path.startsWith("/write")) persist({ i: 3, sub: 0, ts: 0 });
   }, [s, hasAi, path]);
   useEffect(() => {
@@ -82,6 +83,7 @@ export default function Coach() {
     tick(); const id = setInterval(tick, 400);
     return () => { clearInterval(id); prev?.classList.remove("coach-ring"); document.querySelectorAll(".coach-ring").forEach((e) => e.classList.remove("coach-ring")); };
   }, [active, s?.i, s?.sub]);
+  if (path.startsWith("/welcome")) return null;
   if (active && sub) {
     const p = pos || { fb: true };
     return <div key={s!.i + "-" + s!.sub} className={"coach" + (p.fb ? " fb" : "")} role="dialog" aria-label="Guided setup" aria-live="polite" style={p.fb ? undefined : { left: p.left, width: p.w, ...(p.below ? { top: p.y } : { bottom: p.y }) }}>
