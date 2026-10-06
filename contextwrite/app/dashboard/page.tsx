@@ -11,7 +11,7 @@ export default async function Dash() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/login");
   const [{ data }, { data: me }] = await Promise.all([
-    sb.from("projects").select("id,title,writing_type,status,updated_at,drafts(version_number,content)").order("updated_at", { ascending: false }),
+    sb.from("projects").select("id,title,writing_type,status,updated_at,drafts(version_number,content)").order("updated_at", { ascending: false }).order("version_number", { referencedTable: "drafts", ascending: false }).limit(1, { referencedTable: "drafts" }),
     sb.from("users").select("name").eq("id", user.id).maybeSingle(),
   ]);
   const rows = (data || []).map((p: any) => {

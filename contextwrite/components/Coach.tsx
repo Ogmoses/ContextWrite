@@ -50,6 +50,14 @@ export default function Coach() {
     return () => { removeEventListener("online", online); removeEventListener("cw-restart-tour", restart); removeEventListener("cw-onb-set", setOnb); };
   }, []);
   useEffect(() => { if (s?.i === 1 && hasAi && path === "/settings") { const t = setTimeout(() => router.push("/voice"), 1800); return () => clearTimeout(t); } }, [s?.i, hasAi, path]);
+  const [mini, setMini] = useState(false);
+  useEffect(() => { setMini(false); }, [s?.i, s?.sub]);
+  useEffect(() => {
+    const foc = (e: any) => { if (e.target?.closest?.(".coach")) return; if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "")) setMini(true); };
+    const clk = (e: any) => { const c0 = ref.current; if (c0 && c0.i === 0 && c0.sub === 0 && e.target?.closest?.('[data-coach="provider"] button')) persist({ ...c0, sub: 1 }); };
+    addEventListener("focusin", foc); addEventListener("click", clk);
+    return () => { removeEventListener("focusin", foc); removeEventListener("click", clk); };
+  }, []);
   const st = s && s.i < STEPS.length ? STEPS[s.i] : null, sub = st?.subs[s!.sub] || null, active = !!(st && sub && path === st.path), last = !!st && s!.sub >= st.subs.length - 1;
   const skip = () => s && persist({ i: s.i + 1, sub: 0, ts: 0 });
   const next = () => s && (last ? persist({ i: s.i + 1, sub: 0, ts: 0 }) : persist({ ...s, sub: s.sub + 1 }));
@@ -85,10 +93,11 @@ export default function Coach() {
   }, [active, s?.i, s?.sub]);
   if (path.startsWith("/welcome")) return null;
   if (active && sub) {
+    if (mini) return <button className="coach mini" onClick={() => setMini(false)} aria-label="Show tip">Show tip</button>;
     const p = pos || { fb: true };
     return <div key={s!.i + "-" + s!.sub} className={"coach" + (p.fb ? " fb" : "")} role="dialog" aria-label="Guided setup" aria-live="polite" style={p.fb ? undefined : { left: p.left, width: p.w, ...(p.below ? { top: p.y } : { bottom: p.y }) }}>
       {!p.fb && <span className={"arrow " + (p.below ? "up" : "down")} style={{ left: p.ax }} />}
-      <div className="cdots">{st!.subs.map((_, k) => <i key={k} className={k <= s!.sub ? "on" : ""} />)}<small>{st!.name}</small></div>
+      <div className="cdots">{st!.subs.map((_, k) => <i key={k} className={k <= s!.sub ? "on" : ""} />)}<small>{st!.name}</small><button className="cmin" onClick={() => setMini(true)} aria-label="Minimize tip">Hide</button></div>
       <h4>{sub.t}</h4><p>{sub.d}</p>
       <div className="crow"><button className="primary sm" onClick={next}>{last ? "Got it" : "Next"}</button><button className="sm" onClick={skip}>Skip this step</button></div>
     </div>;
