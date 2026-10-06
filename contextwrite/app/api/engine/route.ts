@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/errors";
 import { friendly } from "@/lib/ai/errors";
+import { normEngine } from "@/lib/ai/normalize";
 export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
@@ -19,9 +20,10 @@ export async function POST(req: Request) {
     if (projectId) { const { data } = await sb.from("documents").select("filename,metadata").eq("project_id", projectId); docs = (data || []).map((d: any) => ({ filename: d.filename, extracted: d.metadata?.analysis })); }
     const call = async () => parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa, DEEPEN: !!deepen })}\n</user_data>\n<untrusted_documents>\n${JSON.stringify(docs)}\n</untrusted_documents>`, true));
     let r: any; try { r = await call(); } catch (e: any) { if (e?.message === "provider") throw e; r = await call(); }
+    r = normEngine(r);
     let id = projectId;
     if (!id) { const { data, error } = await sb.from("projects").insert({ user_id: user.id, initial_description: description, title: description.slice(0, 60), writing_type: r.classification?.artifact }).select("id").single(); if (error) throw error; id = data.id; }
-    await sb.from("project_context").upsert({ project_id: id, context_json: r.context, strategy_json: null, completeness_json: { score: r.score, classification: r.classification } }, { onConflict: "project_id" });
+    await sb.from("project_context").upsert({ project_id: id, context_json: r.context, strategy_json: null, completeness_json: { score: r.score, classification: r.classification, ready: r.ready, next_question: r.next_question } }, { onConflict: "project_id" });
     await sb.from("context_answers").delete().eq("project_id", id);
     if (qa.length) await sb.from("context_answers").insert(qa.map((x: any) => ({ project_id: id, question_text: x.q, answer: x.a, source: x.a.startsWith("(skipped") ? "skipped" : "user" })));
     return NextResponse.json({ projectId: id, result: r });

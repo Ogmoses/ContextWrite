@@ -15,8 +15,8 @@ export default function Upload({ projectId, onDone }: { projectId: string; onDon
     setMsg(""); await load(); onDone();
   };
   const del = async (d: any) => { if (!confirm(`Remove ${d.filename}?`)) return; await sb().storage.from("documents").remove([d.storage_path]); await sb().from("documents").delete().eq("id", d.id); await load(); onDone(); };
-  return <div className="card">
-    <b>Documents</b> <small>(assignment, email to reply to, notes)</small>
+  return <details className="card">
+    <summary style={{ cursor: "pointer", minHeight: 36, fontWeight: 600 }}>Documents <small>({docs.length} added · assignment, email to reply to, notes)</small></summary>
     {docs.map((d) => { const a = d.metadata?.analysis || {}; return <div key={d.id} style={{ borderTop: "1px solid var(--line)", marginTop: 10, paddingTop: 8 }}>
       <b>{d.filename}</b> <small>· {a.kind}</small><p style={{ margin: "4px 0" }}>{a.summary}</p>
       {!!a.requirements?.length && <><small>What I found:</small><ul>{a.requirements.map((r: string, i: number) => <li key={i}>{r}</li>)}</ul></>}
@@ -27,5 +27,5 @@ export default function Upload({ projectId, onDone }: { projectId: string; onDon
       <br /><button onClick={() => del(d)}>Remove</button></div>; })}
     <p><label className="ui"><input type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" onChange={pick} disabled={busy} style={{ display: "block", width: "100%" }} aria-label="Add a document" /></label></p>
     <small role="status">{msg || "PDF, DOCX, TXT, Markdown or images (PNG, JPG, WEBP), up to 4 MB. Images need a vision model in AI settings. Read carefully: tell me if anything extracted looks wrong."}</small>
-  </div>;
+  </details>;
 }
