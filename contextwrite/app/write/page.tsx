@@ -21,7 +21,7 @@ export default function Write() {
   const engine = (nextQa: any[], d = desc, deepen = false, ask = false) => run("Figuring out what context matters…", async () => {
     const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa, deepen });
     if (!x.ok) return setErr(x.d.error === "NO_AI" ? "Add your AI provider in Settings first." : x.d.error);
-    setPid(x.d.projectId); try { history.replaceState(null, "", "/write?id=" + x.d.projectId); } catch {} setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); const corr = nextQa.length > 0 && nextQa[nextQa.length - 1].q === "User correction", done = x.d.result.ready || !x.d.result.next_question;
+    setPid(x.d.projectId); try { history.replaceState(null, "", "/write?id=" + x.d.projectId); } catch {} setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); const corr = !deepen && !ask && nextQa.length > 0 && nextQa[nextQa.length - 1].q === "User correction", done = x.d.result.ready || !x.d.result.next_question;
     setSummary(corr || !(!!x.d.result.next_question && (deepen || ask || !x.d.result.ready)));
     setNote(corr ? (done ? "Context updated. The summary below reflects your correction." : "Context updated. I have a follow-up question if you'd like to answer it: tap Ask more questions.") : "");
     if (corr) window.scrollTo({ top: 0, behavior: "smooth" });
