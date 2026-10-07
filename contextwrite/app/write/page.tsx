@@ -18,8 +18,8 @@ export default function Write() {
   const [desc, setDesc] = useState(""), [pid, setPid] = useState<string | null>(null), [qa, setQa] = useState<any[]>([]), [r, setR] = useState<any>(null), [ans, setAns] = useState(""),
     [draft, setDraft] = useState(""), [ins, setIns] = useState(""), [busy, setBusy] = useState(""), [err, setErr] = useState(""), [tone, setTone] = useState("Natural"), [voice, setVoice] = useState("Balanced"), [summary, setSummary] = useState(false);
   const run = async (label: string, fn: () => Promise<void>) => { setBusy(label); setErr(""); try { await fn(); } catch { setErr("Something went wrong. Your project is saved. Try again."); } setBusy(""); };
-  const engine = (nextQa: any[], d = desc, deepen = false, ask = false) => run("Figuring out what context matters…", async () => {
-    const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa, deepen });
+  const engine = (nextQa: any[], d = desc, deepen = false, ask = false, avoid = "") => run("Figuring out what context matters…", async () => {
+    const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa, deepen, avoid });
     if (!x.ok) return setErr(x.d.error === "NO_AI" ? "Add your AI provider in Settings first." : x.d.error);
     setPid(x.d.projectId); try { history.replaceState(null, "", "/write?id=" + x.d.projectId); } catch {} setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); const corr = !deepen && !ask && nextQa.length > 0 && nextQa[nextQa.length - 1].q === "User correction", done = x.d.result.ready || !x.d.result.next_question;
     setSummary(corr || !(!!x.d.result.next_question && (deepen || ask || !x.d.result.ready)));
@@ -33,7 +33,7 @@ export default function Write() {
   });
   const [rng, setRng] = useState<[number, number]>([0, 0]);
   const [picked, setPicked] = useState<string[]>([]);
-  const [full, setFull] = useState(false), [pstatus, setPstatus] = useState("draft"), [saveMsg, setSaveMsg] = useState(""), [lang, setLang] = useState(""), [docRev, setDocRev] = useState(0), [note, setNote] = useState(""), [showAns, setShowAns] = useState(false);
+  const [full, setFull] = useState(false), [pstatus, setPstatus] = useState("draft"), [saveMsg, setSaveMsg] = useState(""), [lang, setLang] = useState(""), [docRev, setDocRev] = useState(0), [note, setNote] = useState(""), [showAns, setShowAns] = useState(false), [stale, setStale] = useState(false);
   const locked = pstatus === "final";
   // Phones don't reliably announce text selection changes, so check the editor a few times a second while it's focused.
   useEffect(() => {
@@ -50,6 +50,16 @@ export default function Write() {
   const words = draft.trim() ? draft.trim().split(/\s+/).length : 0;
   const langSel = <label>Language and spelling <select aria-label="Language and spelling" value={lang} onChange={(e) => { setLang(e.target.value); if (pid) sb().from("projects").update({ regional_variant: e.target.value || null }).eq("id", pid).then(() => {}, () => {}); }}>
     <option value="">Match my saved context</option>{["English (Nigerian)", "English (British)", "English (American)"].map((l) => <option key={l} value={l}>{l}</option>)}</select></label>;
+  useEffect(() => {
+    if (!pid || !draft) return;
+    (async () => {
+      try {
+        const c = sb(), [{ data: pc }, { data: ds }] = await Promise.all([c.from("project_context").select("updated_at").eq("project_id", pid).maybeSingle(), c.from("drafts").select("generation_metadata").eq("project_id", pid).order("version_number", { ascending: false }).limit(20)]);
+        const ctx = (ds || []).map((d: any) => d.generation_metadata?.ctx).find(Boolean);
+        setStale(!!(pc?.updated_at && ctx && new Date(pc.updated_at) > new Date(ctx)));
+      } catch {}
+    })();
+  }, [pid, !!draft, docRev]);
   const saveNow = async (finish = false) => {
     if (!pid) return; setBusy("Saving…"); setSaveMsg("");
     try {
@@ -70,6 +80,7 @@ export default function Write() {
   </div>;
   if (draft) return <>
     <h2>Your draft</h2>
+    {stale && !locked && <div className="card" role="status" style={{ borderColor: "var(--btn)" }}><b>Your context changed after this draft was written.</b><p style={{ margin: "4px 0 8px" }}>Regenerate it to match the updated context. The current draft stays in History.</p><button className="primary sm" disabled={!!busy} onClick={() => { setStale(false); gen(); }}>Regenerate from updated context</button><button className="sm" onClick={() => setStale(false)}>Keep this draft</button></div>}
     {locked && <div className="card"><b>This project is finished.</b><p style={{ margin: "4px 0 8px" }}>Reopen it to make changes.</p><button className="primary" onClick={reopen}>Reopen for editing</button></div>}
     <div className="dwrap">
       <div className="dbar">
@@ -109,11 +120,11 @@ export default function Write() {
     <p>{voiceSel} <a href="/voice">Manage</a></p>
     <p>{langSel}</p>
     <textarea aria-label="Correct context" placeholder="Correct or add anything" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} /> <button className="primary" onClick={() => ans && engine([...qa, { q: "User correction", a: ans }])}>Update context</button> <button className="primary" disabled={!!busy} onClick={() => gen()}>Looks right — write it</button> <button disabled={!!busy} onClick={() => engine(qa, desc, true)}>Ask more questions</button> <button disabled={!!busy} onClick={() => setShowAns(!showAns)} aria-expanded={showAns}>Back to context</button>
-    {showAns && <div className="card"><b>Your answers</b>{qa.length ? qa.map((x: any, i: number) => <div key={i} style={{ padding: "8px 0", borderTop: "1px solid var(--line)" }}><small>{x.q}</small><br />{x.a}<br /><button className="sm" disabled={!!busy} onClick={() => engine(qa.slice(0, i), desc, false, true)}>Change this</button></div>) : <p style={{ margin: "6px 0" }}>You haven't answered any questions yet.</p>}<p style={{ margin: "8px 0" }}><small>Changing an answer re-asks from that point, so the answers after it are cleared.</small></p><button className="sm" onClick={() => { setR(null); setSummary(false); setShowAns(false); }}>Edit my first description</button></div>}<p>{busy}</p><p role="alert">{err}</p></>;
+    {showAns && <div className="card"><b>Your answers</b>{qa.length ? qa.map((x: any, i: number) => <div key={i} style={{ padding: "8px 0", borderTop: "1px solid var(--line)" }}><small>{x.q}</small><br />{x.a}<br /><button className="sm" disabled={!!busy} onClick={() => engine(qa.slice(0, i), desc, false, true)}>Change this</button> <button className="sm" disabled={!!busy} onClick={() => engine(qa.filter((_: any, k: number) => k !== i))}>Delete</button></div>) : <p style={{ margin: "6px 0" }}>You haven't answered any questions yet.</p>}<p style={{ margin: "8px 0" }}><small>Changing an answer re-asks from that point, so the answers after it are cleared.</small></p><button className="sm" onClick={() => { setR(null); setSummary(false); setShowAns(false); }}>Edit my first description</button></div>}<p>{busy}</p><p role="alert">{err}</p></>;
   if (r?.next_question) { const q = r.next_question; return <><QBar qa={qa} score={r.score || 0} title={String(r.classification?.artifact || "").replace(/_/g, " ")} busy={!!busy} onJump={(i) => engine(qa.slice(0, i), desc, false, true)} /><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
     {!!q.options?.length && <div style={{ margin: "8px 0" }}>{q.options.map((o: string) => { const parts = ans.split(/,\s*/).filter(Boolean), on = q.type === "multi" ? parts.includes(o) : ans.trim() === o; return <button key={o} className={on ? "primary" : ""} aria-pressed={on} onClick={() => setAns(q.type === "multi" ? (on ? parts.filter((x) => x !== o).join(", ") : [...parts, o].join(", ")) : on ? "" : o)}>{o}</button>; })}
       <br /><small>Tap a suggestion to add it to your answer, add your own details if you like, then press Answer.</small></div>}
     {pid && <><Upload key={docRev} projectId={pid} onDone={() => engine(qa)} /><Research projectId={pid} onDone={() => { setDocRev((n) => n + 1); engine(qa); }} /></>}<textarea aria-label="Your answer" placeholder="Something else? Write it here" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} />
-    <button className="primary" disabled={!!busy} onClick={() => { const a = [...picked, ans.trim()].filter(Boolean).join("; "); if (a) engine([...qa, { q: q.text, a }]); }}>Answer</button> <button onClick={() => engine([...qa, { q: q.text, a: "(skipped — use best judgment, mark assumptions)" }])}>Skip</button> <button onClick={() => setSummary(true)}>Generate now</button><p>{busy}</p><p role="alert">{err}</p></>; }
+    <button className="primary" disabled={!!busy} onClick={() => { const a = [...picked, ans.trim()].filter(Boolean).join("; "); if (a) engine([...qa, { q: q.text, a }]); }}>Answer</button> <button onClick={() => engine([...qa, { q: q.text, a: "(skipped — use best judgment, mark assumptions)" }])}>Skip</button> <button disabled={!!busy} onClick={() => engine(qa, desc, false, true, q.text)}>Different question</button> <button onClick={() => setSummary(true)}>Generate now</button><p>{busy}</p><p role="alert">{err}</p></>; }
   return <><h1>What are you trying to write?</h1><textarea aria-label="Describe what you want to write" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ width: "100%", minHeight: 130 }} placeholder="e.g. I want to write an essay about why habit streaks fail, for young readers." /><br /><button className="primary" disabled={!!busy || !desc.trim()} onClick={() => engine([])}>Start Writing</button><p>{busy}</p><p role="alert">{err}</p><BrainDump onStart={(d) => { setDesc(d); engine([], d); }} /></>;
 }

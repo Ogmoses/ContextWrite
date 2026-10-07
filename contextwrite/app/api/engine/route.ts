@@ -12,13 +12,13 @@ export async function POST(req: Request) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "auth" }, { status: 401 });
   if (limited("engine:" + user.id, 20)) return NextResponse.json({ error: "Too many requests. Wait a minute and try again." }, { status: 429 });
-  const { projectId, description, qa = [], deepen } = await req.json();
+  const { projectId, description, qa = [], deepen, avoid } = await req.json();
   if (typeof description !== "string" || description.length > 5000 || !Array.isArray(qa) || qa.length > 60 || qa.some((x: any) => typeof x?.q !== "string" || typeof x?.a !== "string" || x.a.length > 6000)) return NextResponse.json({ error: "That input is too long or invalid." }, { status: 400 });
   try {
     const cfg = await getCfg(user.id, "strong");
     let docs: any[] = [];
     if (projectId) { const { data } = await sb.from("documents").select("filename,metadata").eq("project_id", projectId); docs = (data || []).map((d: any) => ({ filename: d.filename, extracted: d.metadata?.analysis })); }
-    const call = async () => parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa, DEEPEN: !!deepen })}\n</user_data>\n<untrusted_documents>\n${JSON.stringify(docs)}\n</untrusted_documents>`, true));
+    const call = async () => parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa, DEEPEN: !!deepen, AVOID_QUESTION: typeof avoid === "string" ? avoid.slice(0, 300) : "" })}\n</user_data>\n<untrusted_documents>\n${JSON.stringify(docs)}\n</untrusted_documents>`, true));
     let r: any; try { r = await call(); } catch (e: any) { if (e?.message === "provider") throw e; r = await call(); }
     r = normEngine(r);
     let id = projectId;

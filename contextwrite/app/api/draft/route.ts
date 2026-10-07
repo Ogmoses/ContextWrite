@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const { projectId, instruction, selection, current, tone, voice, voiceId, useSaved, mode, lang } = await req.json();
   if ((instruction || "").length > 1500 || (current || "").length > 200000 || (selection || "").length > 200000) return NextResponse.json({ error: "That input is too long." }, { status: 400 });
   try {
-    const { data: pc } = await sb.from("project_context").select("context_json, completeness_json, strategy_json").eq("project_id", projectId).single();
+    const { data: pc } = await sb.from("project_context").select("context_json, completeness_json, strategy_json, updated_at").eq("project_id", projectId).single();
     if (!pc) return NextResponse.json({ error: "not found" }, { status: 404 });
     let extra = "";
     const { data: dd } = await sb.from("documents").select("filename,metadata").eq("project_id", projectId);
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const content = await chat(await getCfg(user.id, "strong"), WRITER, u);
     const { data: last } = await sb.from("drafts").select("version_number").eq("project_id", projectId).order("version_number", { ascending: false }).limit(1);
     const version = (last?.[0]?.version_number || 0) + 1;
-    await sb.from("drafts").insert({ project_id: projectId, version_number: version, name: instruction?.slice(0, 40) || "Draft", content });
+    await sb.from("drafts").insert({ project_id: projectId, version_number: version, name: instruction?.slice(0, 40) || "Draft", content, generation_metadata: { ctx: pc.updated_at } });
     await sb.from("projects").update({ status: "draft" }).eq("id", projectId);
     return NextResponse.json({ content, version });
   } catch (e) { console.error(e); logError("draft", e); return NextResponse.json({ error: friendly(e) || "Something went wrong. Your project is saved. Try again." }, { status: 500 }); }
