@@ -104,3 +104,8 @@ create or replace function public.admin_stats() returns jsonb language sql stabl
 $$;
 revoke execute on function public.admin_stats() from public, anon, authenticated;
 grant execute on function public.admin_stats() to service_role;
+
+-- Keep public.users.email in step when someone changes their login email.
+create or replace function public.handle_user_email_change() returns trigger language plpgsql security definer set search_path = '' as $$ begin update public.users set email = new.email where id = new.id; return new; end $$;
+revoke execute on function public.handle_user_email_change() from public, anon, authenticated;
+create trigger on_auth_user_email_changed after update of email on auth.users for each row when (old.email is distinct from new.email) execute function public.handle_user_email_change();

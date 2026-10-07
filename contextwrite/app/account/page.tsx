@@ -7,7 +7,21 @@ const T = ["users", "settings", "projects", "project_context", "context_answers"
 export default function Account() {
   const [email, setEmail] = useState(""), [msg, setMsg] = useState(""), [conf, setConf] = useState(""), [busy, setBusy] = useState(false);
   useEffect(() => { sb().auth.getUser().then(({ data }) => setEmail(data.user?.email || "")); }, []);
-  const [usage, setUsage] = useState<any>(null);
+  const [usage, setUsage] = useState<any>(null), [newEmail, setNewEmail] = useState(""), [pw1, setPw1] = useState(""), [pw2, setPw2] = useState(""), [msgE, setMsgE] = useState(""), [msgP, setMsgP] = useState(""), [wait, setWait] = useState(false);
+  const changeEmail = async () => {
+    const e = newEmail.trim(); if (!/^\S+@\S+\.\S+$/.test(e)) return setMsgE("Enter a valid email address.");
+    setWait(true); setMsgE("");
+    const { error } = await sb().auth.updateUser({ email: e }, { emailRedirectTo: location.origin + "/auth/callback?next=/account" });
+    setWait(false); if (error) return setMsgE(/reauth|recent/i.test(error.message) ? "For safety, log out and log back in, then try again." : error.message);
+    setNewEmail(""); setMsgE("Check your current and your new inbox, and tap the confirmation link in each. Your login email changes once both are confirmed.");
+  };
+  const changePw = async () => {
+    if (pw1.length < 8) return setMsgP("Use at least 8 characters."); if (pw1 !== pw2) return setMsgP("The two passwords don't match.");
+    setWait(true); setMsgP("");
+    const { error } = await sb().auth.updateUser({ password: pw1 }); setWait(false);
+    if (error) return setMsgP(/reauth|recent|nonce/i.test(error.message) ? "For safety, log out and log back in, then try again." : error.message);
+    setPw1(""); setPw2(""); setMsgP("Password changed. Use it next time you log in.");
+  };
   useEffect(() => { sb().from("ai_usage").select("input_tokens,output_tokens").gte("created_at", new Date(Date.now() - 30 * 864e5).toISOString()).limit(5000).then(({ data }) => setUsage({ n: data?.length || 0, i: (data || []).reduce((a: number, r: any) => a + (r.input_tokens || 0), 0), o: (data || []).reduce((a: number, r: any) => a + (r.output_tokens || 0), 0) })); }, []);
   const exportAll = async () => {
     setBusy(true); setMsg("Collecting your data…");
@@ -31,6 +45,13 @@ export default function Account() {
     <section className="sec c1"><p style={{ margin: "0 0 8px" }}>Signed in as <b>{email}</b></p>
     <button onClick={async () => { await sb().auth.signOut(); location.href = "/"; }}>Log out</button>
     </section>
+    <section className="sec c5"><h2>Sign-in details</h2>
+      <b>Change email</b><input type="email" autoComplete="email" aria-label="New email" placeholder="New email address" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+      <button disabled={wait || !newEmail} onClick={changeEmail}>Change email</button> <small role="status">{msgE}</small>
+      <p style={{ margin: "16px 0 0" }}><b>Change password</b> <small>(also works if you signed in with Google and want a password too)</small></p>
+      <input type="password" autoComplete="new-password" aria-label="New password" placeholder="New password (8+ characters)" value={pw1} onChange={(e) => setPw1(e.target.value)} />
+      <input type="password" autoComplete="new-password" aria-label="Confirm new password" placeholder="Confirm new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+      <button disabled={wait || !pw1} onClick={changePw}>Change password</button> <small role="status">{msgP}</small></section>
     <section className="sec c2"><h2>Your data</h2>
     <p>Download everything ContextWrite holds about you as one file: projects, answers, drafts and versions, voice profiles and samples, and saved context.</p>
     <button disabled={busy} onClick={exportAll}>Export all my data</button>
@@ -46,5 +67,6 @@ export default function Account() {
       <label>Type DELETE to confirm<input type="text" value={conf} onChange={(e) => setConf(e.target.value)} autoComplete="off" /></label>
       <button disabled={busy || conf !== "DELETE"} onClick={del}>Delete my account permanently</button>
     </div></section>
+    <p style={{ textAlign: "center" }}><small><Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link></small></p>
   </>;
 }

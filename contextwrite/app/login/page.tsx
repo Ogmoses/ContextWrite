@@ -36,6 +36,7 @@ export default function Login() {
       {mode === "login" && <div className="meta"><span /><button type="button" style={{ background: "none", border: 0, minHeight: 0, padding: 0, color: "var(--link)" }} onClick={() => to("reset")}>Forgot password?</button></div>}
       <button type="button" className="primary go" disabled={busy} onClick={submit}>{go}</button>
       <p role="status" style={{ margin: "8px 0 0", color: "var(--mute)", fontSize: 14 }}>{msg}</p>
+      {mode === "signup" && <p style={{ margin: "10px 0 0", fontSize: 13, color: "var(--mute)" }}>By signing up, you agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>}
       <p className="foot">{mode === "login" ? <>Don't have an account? <button type="button" onClick={() => to("signup")}>Sign up</button></> : mode !== "newpw" && <>Already have an account? <button type="button" onClick={() => to("login")}>Log in</button></>}</p>
     </div>
   </>;

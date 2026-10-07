@@ -9,7 +9,7 @@ import { BRAND } from "@/lib/brand";
 import Coach from "./Coach";
 import FloatingFeedback from "./FloatingFeedback";
 export default function Shell({ children }: { children: React.ReactNode }) {
-  const p = usePathname() || "/", auth = p.startsWith("/login") || p.startsWith("/welcome"), pill = !auth && p !== "/";
+  const p = usePathname() || "/", auth = p.startsWith("/login") || p.startsWith("/welcome"), legal = p.startsWith("/privacy") || p.startsWith("/terms"), pill = !auth && p !== "/" && !legal;
   const [dark, setDark] = useState(false), [authed, setAuthed] = useState(false);
   useEffect(() => {
     const t = document.documentElement.dataset.theme;
@@ -29,8 +29,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {authed && <Link href="/settings" className="ib" aria-label="AI settings" title="AI settings"><Icon n="sliders" /></Link>}
       {authed && <button className="ib" aria-label="Log out" onClick={out}><Icon n="logout" /></button>}</div></header>}
     {auth ? <div className="authwrap">{children}</div> : <main>{children}</main>}
-    {!p.startsWith("/login") && <Coach />}
-    {!auth && authed && !first && <FloatingFeedback />}
+    {!p.startsWith("/login") && !legal && <Coach />}
+    {!auth && authed && !first && !legal && <FloatingFeedback />}
     {pill && !first && <nav className="pill" aria-label="Main" ref={nav}><span className="bubble" style={bub} aria-hidden="true" />
       <Link href="/dashboard" className={on("/dashboard")}><Icon n="home" />Home</Link>
       <Link href="/write" className="plus" aria-label="New writing"><Icon n="plus" size={24} /></Link>

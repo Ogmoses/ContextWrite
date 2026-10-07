@@ -83,6 +83,6 @@ export default function Home() {
 
     <section className="w2 ctaw"><div className="cta"><h2>Start with what you mean.</h2><p>Tell it what you're trying to write. You don't need to have it figured out yet.</p><Link href="/login"><button>Start writing</button></Link></div></section>
 
-    <footer className="w2 foot2"><span>© {new Date().getFullYear()} {BRAND.name}</span><span><Link href="/login">Log in</Link> · <Link href="/login">Create an account</Link></span></footer>
+    <footer className="w2 foot2"><span>© {new Date().getFullYear()} {BRAND.name}</span><span><Link href="/login">Log in</Link> · <Link href="/login">Create an account</Link> · <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link></span></footer>
   </div>;
 }
