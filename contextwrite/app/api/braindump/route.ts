@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/errors";
+import { friendly } from "@/lib/ai/errors";
 export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
@@ -15,5 +16,5 @@ export async function POST(req: Request) {
   try {
     const r = parseJson(await chat(await getCfg(user.id, "strong"), P, `<user_data>\n${text}\n</user_data>`, true));
     return NextResponse.json(r);
-  } catch (e: any) { console.error(e); logError("braindump", e); return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Your text is still here. Try again." }, { status: 500 }); }
+  } catch (e: any) { console.error(e); logError("braindump", e); return NextResponse.json({ error: friendly(e) ? friendly(e) : e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Your text is still here. Try again." }, { status: 500 }); }
 }

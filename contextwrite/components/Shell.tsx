@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { sb } from "@/lib/supabase/browser";
 import { BRAND } from "@/lib/brand";
 import Coach from "./Coach";
+import Analytics from "./Analytics";
 import FloatingFeedback from "./FloatingFeedback";
 export default function Shell({ children }: { children: React.ReactNode }) {
   const p = usePathname() || "/", auth = p.startsWith("/login") || p.startsWith("/welcome"), legal = p.startsWith("/privacy") || p.startsWith("/terms"), pill = !auth && p !== "/" && !legal;
@@ -31,6 +32,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     {auth ? <div className="authwrap">{children}</div> : <main>{children}</main>}
     {!p.startsWith("/login") && !legal && <Coach />}
     {!auth && authed && !first && !legal && <FloatingFeedback />}
+    {authed && !legal && <Analytics />}
     {pill && !first && <nav className="pill" aria-label="Main" ref={nav}><span className="bubble" style={bub} aria-hidden="true" />
       <Link href="/dashboard" className={on("/dashboard")}><Icon n="home" />Home</Link>
       <Link href="/write" className="plus" aria-label="New writing"><Icon n="plus" size={24} /></Link>

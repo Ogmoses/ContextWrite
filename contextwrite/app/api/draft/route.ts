@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { track } from "@/lib/track";
 import { logError } from "@/lib/errors";
 import { friendly } from "@/lib/ai/errors";
 export const maxDuration = 60;
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
     if (mode === "passage" || mode === "explain") {
       const sys = mode === "passage" ? WRITER + "\nRewrite ONLY the passage below as instructed and return only that passage. Add no facts beyond the context." : "You explain writing to its author. In 3-4 plain sentences say what this passage does and how well it serves the audience and purpose. Do not rewrite it.";
       const out = await chat(await getCfg(user.id, "strong"), sys, `<user_data>\nCONTEXT:${JSON.stringify(pc)}\nTONE:${tone}\nVOICE_PRESERVATION:${voice}${extra}\nINSTRUCTION:${instruction || ""}\nPASSAGE:\n${selection}\nFULL_DRAFT_FOR_REFERENCE:\n${current || ""}\n</user_data>`);
+      if (mode === "passage") track(user.id, "passage_edited", {});
       return NextResponse.json({ content: out.trim() });
     }
     const u = `<user_data>\nCONTEXT:${JSON.stringify(pc)}\nTONE:${tone}\nVOICE_PRESERVATION:${voice}${extra}\n${current ? `CURRENT_DRAFT:\n${current}\nINSTRUCTION:${instruction}\n${selection ? `Change only this passage, return the full draft:\n${selection}` : "Return the full revised draft."}` : "Write the piece now."}\n</user_data>`;
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
     const version = (last?.[0]?.version_number || 0) + 1;
     await sb.from("drafts").insert({ project_id: projectId, version_number: version, name: instruction?.slice(0, 40) || "Draft", content, generation_metadata: { ctx: pc.updated_at } });
     await sb.from("projects").update({ status: "draft" }).eq("id", projectId);
+    track(user.id, "draft_generated", { mode: instruction ? "revise" : "first" });
     return NextResponse.json({ content, version });
   } catch (e) { console.error(e); logError("draft", e); return NextResponse.json({ error: friendly(e) || "Something went wrong. Your project is saved. Try again." }, { status: 500 }); }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/errors";
+import { friendly } from "@/lib/ai/errors";
 export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
@@ -21,5 +22,5 @@ export async function POST(req: Request) {
     let voice: any = null; if (voiceId) { const { data } = await sb.from("voice_profiles").select("profile_json").eq("id", voiceId).maybeSingle(); voice = data?.profile_json; }
     const r = parseJson(await chat(await getCfg(user.id, "strong"), P, `<user_data>\nCONTEXT:${JSON.stringify(pc)}\nDOCUMENTS:${JSON.stringify((docs || []).map((d: any) => ({ f: d.filename, a: d.metadata?.analysis })))}\nVOICE_PROFILE:${JSON.stringify(voice)}\nDRAFT:\n${content}\n</user_data>`, true));
     return NextResponse.json(r);
-  } catch (e: any) { console.error(e); logError("quality", e); return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); }
+  } catch (e: any) { console.error(e); logError("quality", e); return NextResponse.json({ error: friendly(e) ? friendly(e) : e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); }
 }

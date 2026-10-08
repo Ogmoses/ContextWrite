@@ -109,3 +109,26 @@ grant execute on function public.admin_stats() to service_role;
 create or replace function public.handle_user_email_change() returns trigger language plpgsql security definer set search_path = '' as $$ begin update public.users set email = new.email where id = new.id; return new; end $$;
 revoke execute on function public.handle_user_email_change() from public, anon, authenticated;
 create trigger on_auth_user_email_changed after update of email on auth.users for each row when (old.email is distinct from new.email) execute function public.handle_user_email_change();
+
+-- Optional monthly AI-request limit: a global default (app_config) with a per-user override (users.monthly_limit). 0 = unlimited.
+create table public.app_config (key text primary key, value jsonb not null, updated_at timestamptz not null default now());
+alter table public.app_config enable row level security; -- no policies: server (service role) only
+insert into public.app_config (key, value) values ('monthly_request_limit', '0'::jsonb) on conflict (key) do nothing;
+alter table public.users add column if not exists monthly_limit int check (monthly_limit is null or monthly_limit >= 0);
+
+-- Privacy-safe product analytics: event names plus a few short labels (never writing). Deleted with the account.
+create table public.events (id uuid primary key default gen_random_uuid(), user_id uuid references public.users(id) on delete cascade, name text not null, props jsonb not null default '{}'::jsonb, created_at timestamptz not null default now());
+create index events_created_idx on public.events(created_at desc);
+create index events_name_idx on public.events(name, created_at desc);
+create index events_user_idx on public.events(user_id);
+alter table public.events enable row level security; -- no policies: server (service role) only
+create or replace function public.admin_events() returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object(
+    'by_name', (select coalesce(jsonb_object_agg(k, c), '{}'::jsonb) from (select name k, count(*) c from public.events where created_at > now() - interval '30 days' and name <> 'session' group by 1) x),
+    'writing_types', (select coalesce(jsonb_object_agg(k, c), '{}'::jsonb) from (select coalesce(props->>'type', 'unknown') k, count(*) c from public.events where name = 'project_created' and created_at > now() - interval '30 days' group by 1) x),
+    'avg_session_seconds', (select coalesce(round(avg((props->>'seconds')::numeric)), 0) from public.events where name = 'session' and created_at > now() - interval '30 days'),
+    'sessions_30d', (select count(*) from public.events where name = 'session' and created_at > now() - interval '30 days'),
+    'daily_active', (select coalesce(jsonb_agg(jsonb_build_object('d', d, 'n', n) order by d), '[]'::jsonb) from (select g::date d, (select count(distinct user_id) from public.events where created_at::date = g::date) n from generate_series(current_date - 13, current_date, interval '1 day') g) x));
+$$;
+revoke execute on function public.admin_events() from public, anon, authenticated;
+grant execute on function public.admin_events() to service_role;

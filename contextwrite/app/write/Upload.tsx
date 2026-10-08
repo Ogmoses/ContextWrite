@@ -26,6 +26,6 @@ export default function Upload({ projectId, onDone }: { projectId: string; onDon
       {a.word_count && a.word_count !== "unclear" && <small>Length: {a.word_count} </small>}{a.deadline && a.deadline !== "unclear" && <small>Deadline: {a.deadline}</small>}
       <br /><button onClick={() => del(d)}>Remove</button></div>; })}
     <p><label className="ui"><input type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" onChange={pick} disabled={busy} style={{ display: "block", width: "100%" }} aria-label="Add a document" /></label></p>
-    <small role="status">{msg || "PDF, DOCX, TXT, Markdown or images (PNG, JPG, WEBP), up to 4 MB. Images need a vision model in AI settings. Read carefully: tell me if anything extracted looks wrong."}</small>
+    <small role="status">{msg || "PDF, DOCX, TXT, Markdown or images (PNG, JPG, WEBP), up to 4 MB. Photos and scanned PDFs need a vision model in AI settings (a few pages work best). Read carefully: tell me if anything extracted looks wrong."}</small>
   </details>;
 }

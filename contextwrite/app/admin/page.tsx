@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { userClient, admin } from "@/lib/supabase/server";
 import AdminFeedback from "./AdminFeedback";
+import AdminLimit from "./AdminLimit";
 export const dynamic = "force-dynamic";
 const n = (x: any) => Number(x || 0).toLocaleString("en-GB");
 const Obj = ({ o }: { o: Record<string, number> }) => { const e = Object.entries(o || {}).sort((a, b) => b[1] - a[1]); return e.length ? <ul>{e.map(([k, v]) => <li key={k}>{k}: <b>{n(v)}</b></li>)}</ul> : <p><small>None yet.</small></p>; };
@@ -17,6 +18,8 @@ export default async function Admin() {
   await a.from("audit_log").insert({ actor_id: user.id, action: "admin_view_stats", target: "admin_stats" });
   const { data: log } = await a.from("audit_log").select("action,created_at").order("created_at", { ascending: false }).limit(8);
   const { data: fb } = await a.from("feedback").select("id,kind,message,ok_to_publish,status,created_at,users(email,name)").order("created_at", { ascending: false }).limit(60);
+  const { data: ev } = await a.rpc("admin_events");
+  const { data: cfg } = await a.from("app_config").select("value").eq("key", "monthly_request_limit").maybeSingle();
   if (error || !s) return <><h1>Admin</h1><p role="alert">Couldn't load stats. Check that the admin_stats function exists in your database.</p></>;
   const max = Math.max(1, ...(s.daily || []).map((d: any) => d.ai));
   const rate = s.ai_7d ? ((s.errors_7d / s.ai_7d) * 100).toFixed(1) : "0.0";
@@ -42,6 +45,12 @@ export default async function Admin() {
     <h2>Breakdown (30 days)</h2>
     <div className="card"><b>By request type</b><Obj o={s.ai_by_type} /><b>By model</b><Obj o={s.ai_by_model} /><b>Connected providers</b><Obj o={s.providers} /></div>
     {!!Object.keys(s.errors_by_route || {}).length && <><h2>Errors by route (7 days)</h2><div className="card"><Obj o={s.errors_by_route} /></div></>}
+    <h2>Product analytics (30 days)</h2>
+    <div className="card"><b>Actions</b><Obj o={ev?.by_name || {}} /><b>Writing types started</b><Obj o={ev?.writing_types || {}} />
+      <p style={{ margin: "8px 0 0" }}>Visits: <b>{n(ev?.sessions_30d)}</b> · average length <b>{Math.floor((ev?.avg_session_seconds || 0) / 60)} min {(ev?.avg_session_seconds || 0) % 60} s</b></p>
+      <small>Counts and short labels only. Never writing or file contents. Events are deleted with the account.</small></div>
+    <h2>Usage limit</h2>
+    <AdminLimit current={Number(cfg?.value ?? 0) || 0} />
     <h2>Feedback ({(fb || []).filter((x: any) => x.status === "new").length} new)</h2>
     <AdminFeedback items={(fb as any[]) || []} />
     <h2>Audit log</h2>

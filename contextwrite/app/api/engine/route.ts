@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { track } from "@/lib/track";
 import { logError } from "@/lib/errors";
 import { friendly } from "@/lib/ai/errors";
 import { normEngine } from "@/lib/ai/normalize";
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     const call = async () => parseJson(await chat(cfg, ENGINE, `<user_data>\n${JSON.stringify({ description, qa, DEEPEN: !!deepen, AVOID_QUESTION: typeof avoid === "string" ? avoid.slice(0, 300) : "" })}\n</user_data>\n<untrusted_documents>\n${JSON.stringify(docs)}\n</untrusted_documents>`, true));
     let r: any; try { r = await call(); } catch (e: any) { if (e?.message === "provider") throw e; r = await call(); }
     r = normEngine(r);
+    if (!projectId) track(user.id, "project_created", { type: r.classification?.artifact }); else if (qa.length && !deepen) track(user.id, "context_round", {});
     let id = projectId;
     if (!id) { const { data, error } = await sb.from("projects").insert({ user_id: user.id, initial_description: description, title: description.slice(0, 60), writing_type: r.classification?.artifact }).select("id").single(); if (error) throw error; id = data.id; }
     await sb.from("project_context").upsert({ project_id: id, context_json: r.context, strategy_json: null, completeness_json: { score: r.score, classification: r.classification, ready: r.ready, next_question: r.next_question } }, { onConflict: "project_id" });

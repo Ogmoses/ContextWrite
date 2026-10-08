@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { track } from "@/lib/track";
 import { logError } from "@/lib/errors";
+import { friendly } from "@/lib/ai/errors";
 export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
@@ -30,9 +32,10 @@ export async function POST(req: Request) {
     const cav = g(/CAVEATS:\s*([\s\S]*)$/i), caveats = cav && !/^none\.?$/i.test(cav) ? [cav.slice(0, 500)] : [];
     const { error } = await sb.from("documents").insert({ project_id: projectId, filename: ("Research: " + query).slice(0, 80), storage_path: "research/" + crypto.randomUUID(), extracted_text: text.slice(0, 40000), metadata: { analysis: { kind: "research", summary, requirements: findings, caveats, sources, tone: "", word_count: "", deadline: "" } } });
     if (error) throw error;
+    track(user.id, "research_run", {});
     return NextResponse.json({ ok: true, found: findings.length, sources: sources.length });
   } catch (e: any) {
     console.error(e); logError("research", e);
-    return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : e.code === "NO_SEARCH" ? "Web search works with Gemini, Claude or OpenAI. Switch provider in AI settings to use research." : "The search failed. Your model may not support web search; try another model in AI settings." }, { status: 400 });
+    return NextResponse.json({ error: friendly(e) ? friendly(e) : e.code === "NO_AI" ? "Add your AI provider in Settings first." : e.code === "NO_SEARCH" ? "Web search works with Gemini, Claude or OpenAI. Switch provider in AI settings to use research." : "The search failed. Your model may not support web search; try another model in AI settings." }, { status: 400 });
   }
 }

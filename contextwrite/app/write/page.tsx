@@ -66,7 +66,7 @@ export default function Write() {
       const c = sb(); const { data: l } = await c.from("drafts").select("version_number,content").eq("project_id", pid).order("version_number", { ascending: false }).limit(1);
       if (l?.[0]?.content !== draft) { const { error } = await c.from("drafts").insert({ project_id: pid, version_number: (l?.[0]?.version_number || 0) + 1, name: finish ? "Final" : "Saved edit", content: draft }); if (error) throw error; }
       const st = finish ? "final" : "draft"; const { error: e2 } = await c.from("projects").update({ status: st }).eq("id", pid); if (e2) throw e2; setPstatus(st);
-      if (finish) { location.href = "/dashboard"; return; }
+      if (finish) { fetch("/api/track", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "project_finished" }), keepalive: true }).catch(() => {}); location.href = "/dashboard"; return; }
       setSaveMsg("Saved.");
     } catch { setSaveMsg("Couldn't save. Your text is still here. Try again."); }
     setBusy("");

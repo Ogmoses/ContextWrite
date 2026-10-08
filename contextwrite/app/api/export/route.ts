@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { track } from "@/lib/track";
 import { logError } from "@/lib/errors";
 import { userClient } from "@/lib/supabase/server";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
       else children.push(new Paragraph({ spacing: { after: 160, line: 320 }, children: lines.flatMap((l, i) => runs(l, i ? { break: 1 } : {})) }));
     }
     const buf = await Packer.toBuffer(new Document({ styles: { default: { document: { run: { font: "Georgia", size: 24 } } } }, sections: [{ children }] }));
+    track(user.id, "export_done", { format: "docx" });
     return new Response(new Uint8Array(buf), { headers: { "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "content-disposition": 'attachment; filename="draft.docx"' } });
   } catch (e) { console.error(e); logError("export", e); return NextResponse.json({ error: "Couldn't create the Word file. Try TXT or Markdown." }, { status: 500 }); }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { logError } from "@/lib/errors";
+import { friendly } from "@/lib/ai/errors";
 export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
@@ -19,5 +20,5 @@ export async function POST(req: Request) {
     const plan = parseJson(await chat(await getCfg(user.id, "strong"), P, `<user_data>\nCONTEXT:${JSON.stringify(pc)}\nDOCUMENTS:${JSON.stringify((docs || []).map((d: any) => ({ f: d.filename, a: d.metadata?.analysis })))}\n</user_data>`, true));
     await sb.from("project_context").update({ strategy_json: plan }).eq("project_id", projectId);
     return NextResponse.json(plan);
-  } catch (e: any) { console.error(e); logError("plan", e); return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); }
+  } catch (e: any) { console.error(e); logError("plan", e); return NextResponse.json({ error: friendly(e) ? friendly(e) : e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); }
 }

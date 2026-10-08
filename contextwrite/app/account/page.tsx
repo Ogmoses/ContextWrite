@@ -7,7 +7,8 @@ const T = ["users", "settings", "projects", "project_context", "context_answers"
 export default function Account() {
   const [email, setEmail] = useState(""), [msg, setMsg] = useState(""), [conf, setConf] = useState(""), [busy, setBusy] = useState(false);
   useEffect(() => { sb().auth.getUser().then(({ data }) => setEmail(data.user?.email || "")); }, []);
-  const [usage, setUsage] = useState<any>(null), [newEmail, setNewEmail] = useState(""), [pw1, setPw1] = useState(""), [pw2, setPw2] = useState(""), [msgE, setMsgE] = useState(""), [msgP, setMsgP] = useState(""), [wait, setWait] = useState(false);
+  const [usage, setUsage] = useState<any>(null), [newEmail, setNewEmail] = useState(""), [pw1, setPw1] = useState(""), [pw2, setPw2] = useState(""), [msgE, setMsgE] = useState(""), [msgP, setMsgP] = useState(""), [wait, setWait] = useState(false), [lim, setLim] = useState<any>(null);
+  useEffect(() => { fetch("/api/usage").then((r) => r.json()).then(setLim).catch(() => {}); }, []);
   const changeEmail = async () => {
     const e = newEmail.trim(); if (!/^\S+@\S+\.\S+$/.test(e)) return setMsgE("Enter a valid email address.");
     setWait(true); setMsgE("");
@@ -60,6 +61,7 @@ export default function Account() {
     </section>
     <section className="sec c4"><h2>AI usage</h2>
       <p style={{ margin: "0 0 6px" }}>{usage ? <>Last 30 days: <b>{usage.n.toLocaleString("en-GB")}</b> requests · <b>{usage.i.toLocaleString("en-GB")}</b> tokens in · <b>{usage.o.toLocaleString("en-GB")}</b> tokens out</> : "Loading…"}</p>
+      {lim && lim.limit > 0 && <><div className="meter" role="progressbar" aria-label="Monthly allowance used" aria-valuenow={lim.used} aria-valuemax={lim.limit}><i style={{ width: Math.min(100, (lim.used / lim.limit) * 100) + "%" }} /></div><p style={{ margin: "0 0 6px" }}>This month: <b>{lim.used.toLocaleString("en-GB")}</b> of <b>{lim.limit.toLocaleString("en-GB")}</b> requests. Resets on the 1st.</p></>}
       <small>You're billed by your own AI provider, not by ContextWrite. Token counts come from your provider and only cover requests made since this update.</small></section>
     <section className="sec c3"><h2>Delete account</h2>
     <div>

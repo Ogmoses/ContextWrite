@@ -14,7 +14,7 @@ export default function Privacy() {
       <li><b>Preferences:</b> saved context, language choice and your progress through the guided tour.</li>
       <li><b>Your AI connection:</b> which provider and model you chose. Your API key is encrypted before it is stored and cannot be read back by the browser.</li>
       <li><b>Feedback you send</b> through the feedback button.</li>
-      <li><b>Technical records:</b> how many AI requests were made, which model, and token counts, plus the name of any page that crashed. These never include your writing.</li>
+      <li><b>Technical records:</b> how many AI requests were made, which model, and token counts, plus the name of any page that crashed. These never include your writing. We also count simple actions (for example "a draft was generated", with the writing type) and how long a visit lasted, to see which features are useful.</li>
     </ul>
     <h2>Who can see it</h2>
     <p>Only you can open your projects, voice profiles and files. Our admin tools show totals and counts, never your writing. Admins can read the feedback messages you choose to send, and every admin visit is logged.</p>

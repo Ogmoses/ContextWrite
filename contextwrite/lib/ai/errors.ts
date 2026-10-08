@@ -1,5 +1,6 @@
 // Turns provider and parsing failures into messages a person can act on.
 export function friendly(e: any): string | null {
+  if (e?.code === "LIMIT") return `You've reached this month's usage limit (${e.limit} AI requests). It resets on the 1st.`;
   if (e?.message === "provider") {
     const s = e.status;
     if (s === 429) return "Your AI provider says you've hit its rate or quota limit. Wait a minute, or check your plan with the provider.";

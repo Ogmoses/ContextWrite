@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { track } from "@/lib/track";
 import { logError } from "@/lib/errors";
+import { friendly } from "@/lib/ai/errors";
 export const maxDuration = 60;
 import { limited } from "@/lib/limit";
 import { userClient } from "@/lib/supabase/server";
@@ -14,7 +16,7 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "auth" }, { status: 401 });
   const b = await req.json(), action = b.action;
   if (limited(`voice-${action || "create"}:` + user.id, action === "name" ? 15 : 5)) return NextResponse.json({ error: "Too many requests. Wait a minute and try again." }, { status: 429 });
-  const fail = (e: any) => { console.error(e); logError("voice", e); return NextResponse.json({ error: e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); };
+  const fail = (e: any) => { console.error(e); logError("voice", e); return NextResponse.json({ error: friendly(e) ? friendly(e) : e.code === "NO_AI" ? "Add your AI provider in Settings first." : "Something went wrong. Try again." }, { status: 500 }); };
   try {
     if (action === "name") {
       const s = String(b.sample || "").slice(0, 3000);
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
       merged.merged_from = ps.map((p: any) => p.name);
       const { data: v, error } = await sb.from("voice_profiles").insert({ user_id: user.id, name: String(b.name || "Merged voice").slice(0, 60), profile_json: merged }).select("id").single();
       if (error) throw error;
+      track(user.id, "voice_merged", {});
       return NextResponse.json({ id: v.id });
     }
     const s: string[] = (Array.isArray(b.samples) ? b.samples : []).map((x: any) => String(x).slice(0, 8000)).filter((x: string) => x.trim().length >= 80).slice(0, 8);
@@ -40,6 +43,7 @@ export async function POST(req: Request) {
     const { data: v, error } = await sb.from("voice_profiles").insert({ user_id: user.id, name: String(b.name || "My voice").slice(0, 60), profile_json: profile }).select("id").single();
     if (error) throw error;
     await sb.from("writing_samples").insert(s.map((content) => ({ voice_profile_id: v.id, content })));
+    track(user.id, "voice_created", {});
     return NextResponse.json({ id: v.id, profile });
   } catch (e) { return fail(e); }
 }

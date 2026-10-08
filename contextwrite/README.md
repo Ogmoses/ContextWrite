@@ -42,8 +42,14 @@ Import the repo, set the root directory to the app folder if it isn't the repo r
 ## Security
 Row-level security on every table; users cannot grant themselves admin; the encrypted AI key column is unreadable from the browser; uploads sit in a private per-user folder; AI replies and uploaded documents are treated as data, never instructions; custom AI endpoints must be public HTTPS addresses; API routes are rate limited (in memory, so best effort on serverless). Admin pages show counts only, and every admin view is written to `audit_log`.
 
+## Scanned PDFs
+Text PDFs are read directly. A PDF with no text layer is sent whole to the user's vision model (Gemini and Claude accept PDFs; OpenAI and OpenRouter support varies by model). Files are capped at 4 MB, so scans of a few pages work best.
+
+## Usage limits
+Optional monthly cap on AI requests per user, set on the admin page (0 = unlimited). Override one person with `update public.users set monthly_limit = 100 where email = '…';`. Admins are exempt. Users see their allowance on the Account page.
+
 ## Testing
 `npm test` runs unit tests (endpoint safety, JSON handling, rate limiter, key encryption). `supabase/tests/isolation.sql` proves one user cannot read or change another's data.
 
 ## Not built yet
-Scanned-PDF reading, cost estimates and usage limits, analytics events, change-password and change-email screens, a UI language setting, underline formatting.
+Cost estimates (tokens are tracked, but prices change too often to hard-code), change-password and change-email screens, a UI language setting, underline formatting.
