@@ -21,19 +21,19 @@ export default function Write() {
   const engine = (nextQa: any[], d = desc, deepen = false, ask = false, avoid = "") => run("Figuring out what context matters…", async () => {
     const x = await post("/api/engine", { projectId: pid, description: d, qa: nextQa, deepen, avoid });
     if (!x.ok) return setErr(x.d.error === "NO_AI" ? "Add your AI provider in Settings first." : x.d.error);
-    setPid(x.d.projectId); try { history.replaceState(null, "", "/write?id=" + x.d.projectId); } catch {} setQa(nextQa); setR(x.d.result); setAns(""); setPicked([]); const corr = !deepen && !ask && nextQa.length > 0 && nextQa[nextQa.length - 1].q === "User correction", done = x.d.result.ready || !x.d.result.next_question;
-    setSummary(corr || !(!!x.d.result.next_question && (deepen || ask || !x.d.result.ready)));
+    setPid(x.d.projectId); try { history.replaceState(null, "", "/write?id=" + x.d.projectId); } catch {} setQa(nextQa); setView(null); setR(x.d.result); setAns(""); setPicked([]); const corr = !deepen && !ask && nextQa.length > 0 && nextQa[nextQa.length - 1].q === "User correction", done = x.d.result.ready || !x.d.result.next_question;
+    setSummary(!(!!x.d.result.next_question && (deepen || ask || !x.d.result.ready)));
     setNote(corr ? (done ? "Context updated. The summary below reflects your correction." : "Context updated. I have a follow-up question if you'd like to answer it: tap Ask more questions.") : "");
     if (corr) window.scrollTo({ top: 0, behavior: "smooth" });
   });
   const gen = (instruction?: string, useSel = true) => run("Drafting from your context…", async () => {
     const sel = useSel ? draft.slice(rng[0], rng[1]) : "";
     const x = await post("/api/draft", { projectId: pid, instruction, selection: sel, current: instruction ? draft : undefined, tone, voice, voiceId, useSaved, lang });
-    if (!x.ok) return setErr(x.d.error); setDraft(x.d.content); setRng([0, 0]); setIns("");
+    if (!x.ok) return setErr(x.d.error); setDraft(x.d.content); setRng([0, 0]); setIns(""); setVtick((n) => n + 1);
   });
   const [rng, setRng] = useState<[number, number]>([0, 0]);
   const [picked, setPicked] = useState<string[]>([]);
-  const [full, setFull] = useState(false), [pstatus, setPstatus] = useState("draft"), [saveMsg, setSaveMsg] = useState(""), [lang, setLang] = useState(""), [docRev, setDocRev] = useState(0), [note, setNote] = useState(""), [showAns, setShowAns] = useState(false), [stale, setStale] = useState(false);
+  const [full, setFull] = useState(false), [pstatus, setPstatus] = useState("draft"), [saveMsg, setSaveMsg] = useState(""), [lang, setLang] = useState(""), [docRev, setDocRev] = useState(0), [note, setNote] = useState(""), [showAns, setShowAns] = useState(false), [stale, setStale] = useState(false), [view, setView] = useState<number | null>(null), [edit, setEdit] = useState(""), [vtick, setVtick] = useState(0);
   const locked = pstatus === "final";
   // Phones don't reliably announce text selection changes, so check the editor a few times a second while it's focused.
   useEffect(() => {
@@ -60,6 +60,7 @@ export default function Write() {
       } catch {}
     })();
   }, [pid, !!draft, docRev]);
+  useEffect(() => { if (view !== null) setEdit(qa[view]?.a || ""); }, [view]);
   const saveNow = async (finish = false) => {
     if (!pid) return; setBusy("Saving…"); setSaveMsg("");
     try {
@@ -67,7 +68,7 @@ export default function Write() {
       if (l?.[0]?.content !== draft) { const { error } = await c.from("drafts").insert({ project_id: pid, version_number: (l?.[0]?.version_number || 0) + 1, name: finish ? "Final" : "Saved edit", content: draft }); if (error) throw error; }
       const st = finish ? "final" : "draft"; const { error: e2 } = await c.from("projects").update({ status: st }).eq("id", pid); if (e2) throw e2; setPstatus(st);
       if (finish) { fetch("/api/track", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: "project_finished" }), keepalive: true }).catch(() => {}); location.href = "/dashboard"; return; }
-      setSaveMsg("Saved.");
+      setSaveMsg("Saved."); setVtick((n) => n + 1);
     } catch { setSaveMsg("Couldn't save. Your text is still here. Try again."); }
     setBusy("");
   };
@@ -96,7 +97,7 @@ export default function Write() {
     </div>
     <small role="status">{saveMsg}</small>
     <p><small>{words} words · {Math.max(1, Math.round(words / 200))} min read · {draft.length} characters</small></p>
-    {!locked && pid && <Actions projectId={pid} draft={draft} range={rng} onClear={() => setRng([0, 0])} setDraft={setDraft} opts={{ tone, voice, voiceId, useSaved, lang }} onFull={gen} />}
+    {!locked && pid && <Actions projectId={pid} draft={draft} range={rng} onClear={() => setRng([0, 0])} setDraft={setDraft} onSaved={() => setVtick((n) => n + 1)} opts={{ tone, voice, voiceId, useSaved, lang }} onFull={gen} />}
     {!locked && <Fold title="Refine" cls="c2" open>
       <input aria-label="Revision" placeholder="Tell me what to change, e.g. this sounds too formal" value={ins} onChange={(e) => setIns(e.target.value)} />
       <button className="primary" disabled={!!busy || !ins.trim()} onClick={() => gen(ins)}>Apply change</button> <small>Highlight text first to change only that part.</small>
@@ -107,10 +108,18 @@ export default function Write() {
     </Fold>}
     {pid && <Fold title="Check" cls="c3"><p style={{ margin: "0 0 8px" }}><small>Review the draft against your context: unsupported claims, generic phrases and missing details.</small></p><Quality projectId={pid} content={draft} voiceId={voiceId} /></Fold>}
     <Fold title="Export and share" cls="c4"><Export content={draft} projectId={pid} /></Fold>
-    {pid && <Fold title="History" cls="c5"><Versions projectId={pid} current={draft} onRestore={setDraft} /></Fold>}
+    {pid && <Fold title="History" cls="c5"><Versions projectId={pid} current={draft} onRestore={setDraft} tick={vtick} /></Fold>}
     <p><button onClick={() => setDraft("")}>Back to context</button> <a href="/dashboard">Dashboard</a></p>
     <p>{busy}</p><p role="alert">{err}</p></>;
 
+  if (view !== null && qa[view]) return <>
+    <QBar qa={qa} score={r?.score || 0} title={String(r?.classification?.artifact || "").replace(/_/g, " ")} busy={!!busy} view={view} onJump={(i) => setView(i < 0 ? null : i)} />
+    <div className="card"><small>Question {view + 1} of {qa.length}</small><p style={{ fontSize: 20, margin: "6px 0" }}>{qa[view].q}</p>
+      <textarea aria-label="Your answer" value={edit} onChange={(e) => setEdit(e.target.value)} />
+      <button className="primary" disabled={!!busy || !edit.trim() || edit.trim() === qa[view].a} onClick={() => engine([...qa.slice(0, view), { q: qa[view].q, a: edit.trim() }])}>Re-answer from here</button>
+      <button onClick={() => setView(null)}>Back to where I was</button>
+      <p><small>{qa.length - view - 1 > 0 ? `Your ${qa.length - view - 1} later answer${qa.length - view - 1 === 1 ? "" : "s"} stay safe until you re-answer this question. Re-answering clears them so the follow-up questions can adapt.` : "This is your most recent answer."}</small></p></div>
+    <p>{busy}</p><p role="alert">{err}</p></>;
   if (summary && r) return <><h1>Here's what I understand.</h1>
     {note && <p role="status" className="card" style={{ margin: "8px 0" }}>{note}</p>}{r.context?.summary_lines.filter((l: any) => l.value).map((l: any, i: number) => <p key={i}><b>{l.label}: </b>{l.value}</p>)}
     {!!r.context?.assumptions?.length && <><b>What I'm assuming (tell me if wrong)</b><ul className="marks">{r.context?.assumptions.map((a: any, i: number) => <li key={i}>{String(typeof a === "string" ? a : JSON.stringify(a))}</li>)}</ul></>}
@@ -120,8 +129,8 @@ export default function Write() {
     <p>{voiceSel} <a href="/voice">Manage</a></p>
     <p>{langSel}</p>
     <textarea aria-label="Correct context" placeholder="Correct or add anything" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} /> <button className="primary" onClick={() => ans && engine([...qa, { q: "User correction", a: ans }])}>Update context</button> <button className="primary" disabled={!!busy} onClick={() => gen()}>Looks right — write it</button> <button disabled={!!busy} onClick={() => engine(qa, desc, true)}>Ask more questions</button> <button disabled={!!busy} onClick={() => setShowAns(!showAns)} aria-expanded={showAns}>Back to context</button>
-    {showAns && <div className="card"><b>Your answers</b>{qa.length ? qa.map((x: any, i: number) => <div key={i} style={{ padding: "8px 0", borderTop: "1px solid var(--line)" }}><small>{x.q}</small><br />{x.a}<br /><button className="sm" disabled={!!busy} onClick={() => engine(qa.slice(0, i), desc, false, true)}>Change this</button> <button className="sm" disabled={!!busy} onClick={() => engine(qa.filter((_: any, k: number) => k !== i))}>Delete</button></div>) : <p style={{ margin: "6px 0" }}>You haven't answered any questions yet.</p>}<p style={{ margin: "8px 0" }}><small>Changing an answer re-asks from that point, so the answers after it are cleared.</small></p><button className="sm" onClick={() => { setR(null); setSummary(false); setShowAns(false); }}>Edit my first description</button></div>}<p>{busy}</p><p role="alert">{err}</p></>;
-  if (r?.next_question) { const q = r.next_question; return <><QBar qa={qa} score={r.score || 0} title={String(r.classification?.artifact || "").replace(/_/g, " ")} busy={!!busy} onJump={(i) => engine(qa.slice(0, i), desc, false, true)} /><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
+    {showAns && <div className="card"><b>Your answers</b>{qa.length ? qa.map((x: any, i: number) => <div key={i} style={{ padding: "8px 0", borderTop: "1px solid var(--line)" }}><small>{x.q}</small><br />{x.a}<br /><button className="sm" disabled={!!busy} onClick={() => setView(i)}>View / change</button> <button className="sm" disabled={!!busy} onClick={() => engine(qa.filter((_: any, k: number) => k !== i))}>Delete</button></div>) : <p style={{ margin: "6px 0" }}>You haven't answered any questions yet.</p>}<p style={{ margin: "8px 0" }}><small>Changing an answer re-asks from that point, so the answers after it are cleared.</small></p><button className="sm" onClick={() => { setR(null); setSummary(false); setShowAns(false); }}>Edit my first description</button></div>}<p>{busy}</p><p role="alert">{err}</p></>;
+  if (r?.next_question) { const q = r.next_question; return <><QBar qa={qa} score={r.score || 0} title={String(r.classification?.artifact || "").replace(/_/g, " ")} busy={!!busy} view={view} onJump={(i) => setView(i < 0 ? null : i)} /><p style={{ fontSize: 22 }}>{q.text}</p><small>Why I'm asking: {q.why}</small>
     {!!q.options?.length && <div style={{ margin: "8px 0" }}>{q.options.map((o: string) => { const parts = ans.split(/,\s*/).filter(Boolean), on = q.type === "multi" ? parts.includes(o) : ans.trim() === o; return <button key={o} className={on ? "primary" : ""} aria-pressed={on} onClick={() => setAns(q.type === "multi" ? (on ? parts.filter((x) => x !== o).join(", ") : [...parts, o].join(", ")) : on ? "" : o)}>{o}</button>; })}
       <br /><small>Tap a suggestion to add it to your answer, add your own details if you like, then press Answer.</small></div>}
     {pid && <><Upload key={docRev} projectId={pid} onDone={() => engine(qa)} /><Research projectId={pid} onDone={() => { setDocRev((n) => n + 1); engine(qa); }} /></>}<textarea aria-label="Your answer" placeholder="Something else? Write it here" value={ans} onChange={(e) => setAns(e.target.value)} style={{ width: "100%" }} />

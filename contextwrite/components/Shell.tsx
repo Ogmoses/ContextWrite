@@ -8,6 +8,7 @@ import { sb } from "@/lib/supabase/browser";
 import { BRAND } from "@/lib/brand";
 import Coach from "./Coach";
 import Analytics from "./Analytics";
+import NetBanner from "./NetBanner";
 import FloatingFeedback from "./FloatingFeedback";
 export default function Shell({ children }: { children: React.ReactNode }) {
   const p = usePathname() || "/", auth = p.startsWith("/login") || p.startsWith("/welcome"), legal = p.startsWith("/privacy") || p.startsWith("/terms"), pill = !auth && p !== "/" && !legal;
@@ -25,6 +26,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   if (p === "/") return <>{children}</>;
   const on = (h: string) => p.startsWith(h) ? "on" : "";
   return <>
+    <NetBanner />
     {!auth && !first && <header className="top"><div className="hi"><Link href="/" className="brand"><Logo size={30} />{BRAND.name}</Link>
       <button className="ib" aria-label={dark ? "Switch to light mode" : "Switch to dark mode"} onClick={flip}><Icon n={dark ? "sun" : "moon"} /></button>
       {authed && <Link href="/settings" className="ib" aria-label="AI settings" title="AI settings"><Icon n="sliders" /></Link>}

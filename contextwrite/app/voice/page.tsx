@@ -4,6 +4,11 @@ import Link from "next/link";
 import { sb } from "@/lib/supabase/browser";
 const F: [string, string][] = [["language", "Language / variety (e.g. Nigerian English)"], ["background", "Professional background"], ["audience", "Usual audience"], ["tone", "Preferred tones"], ["vocabulary", "Words or style you like or avoid"]];
 const post = async (b: any) => { const r = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(b) }); return { ok: r.ok, d: await r.json().catch(() => ({})) }; };
+function Rename({ p, onDone }: { p: any; onDone: () => void }) {
+  const [v, setV] = useState(p.name), [busy, setBusy] = useState(false);
+  return <div style={{ margin: "6px 0" }}><input type="text" aria-label="Profile name" value={v} maxLength={60} onChange={(e) => setV(e.target.value)} />
+    <button className="sm" disabled={busy || !v.trim() || v.trim() === p.name} onClick={async () => { setBusy(true); await sb().from("voice_profiles").update({ name: v.trim() }).eq("id", p.id); setBusy(false); onDone(); }}>Save name</button></div>;
+}
 export default function Voice() {
   const [profiles, setProfiles] = useState<any[]>([]), [name, setName] = useState(""), [edited, setEdited] = useState(false), [sug, setSug] = useState(false), [samples, setSamples] = useState<string[]>([]), [cur, setCur] = useState(""), [ok, setOk] = useState(false),
     [busy, setBusy] = useState(false), [msg, setMsg] = useState(""), [saved, setSaved] = useState<any>({}), [smsg, setSmsg] = useState(""), [sel, setSel] = useState<string[]>([]), [mname, setMname] = useState("");
@@ -25,6 +30,7 @@ export default function Voice() {
   const row = (p: any) => { const j = p.profile_json || {}; return <div key={p.id} className="prow">
     <input type="checkbox" checked={sel.includes(p.id)} onChange={() => setSel(sel.includes(p.id) ? sel.filter((x) => x !== p.id) : [...sel, p.id].slice(0, 8))} aria-label={`Select ${p.name} to merge`} />
     <details><summary><b>{p.name}</b><small>{j.merged_from ? `Merged from ${j.merged_from.length} · ` : ""}Formality {j.formality}/10 · {j.preferred_language}</small></summary>
+      <Rename p={p} onDone={load} />
       <small>Directness {Math.round((j.directness || 0) * 100)}% · {j.contractions ? "uses" : "avoids"} contractions</small>
       <List t="Tone" a={j.tone} /><List t="Sentence construction" a={j.sentence_construction} />
       {j.paragraph_style && <p style={{ margin: "6px 0" }}><small>Paragraphs: </small>{j.paragraph_style}</p>}

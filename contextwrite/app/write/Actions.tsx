@@ -15,7 +15,7 @@ const A: [string, string, boolean][] = [
   ["Change ending", "Rewrite only the closing paragraph with a different approach; keep everything else identical.", false],
   ["Continue writing", "Continue the piece from where it ends, using only the supplied context.", false],
 ];
-export default function Actions({ projectId, draft, range, onClear, setDraft, opts, onFull }: { projectId: string; draft: string; range: [number, number]; onClear: () => void; setDraft: (t: string) => void; opts: any; onFull: (i: string, useSel?: boolean) => void }) {
+export default function Actions({ projectId, draft, range, onClear, setDraft, onSaved, opts, onFull }: { projectId: string; draft: string; range: [number, number]; onClear: () => void; onSaved?: () => void; setDraft: (t: string) => void; opts: any; onFull: (i: string, useSel?: boolean) => void }) {
   const [busy, setBusy] = useState(false), [msg, setMsg] = useState(""), [prev, setPrev] = useState<string | null>(null), [why, setWhy] = useState("");
   const s = Math.min(range[0], draft.length), e = Math.min(range[1], draft.length), has = e > s, n = has ? draft.slice(s, e).trim().split(/\s+/).length : 0;
   const call = async (mode: string, instruction: string) => {
@@ -26,7 +26,7 @@ export default function Actions({ projectId, draft, range, onClear, setDraft, op
   const act = async ([lab, ins, selOk]: [string, string, boolean]) => {
     if (!(selOk && has)) return onFull(ins, false);
     setBusy(true); setMsg(""); setWhy("");
-    try { const t = await call("passage", ins); setPrev(draft); const nt = draft.slice(0, s) + t + draft.slice(e); setDraft(nt); onClear(); await saveVer(nt, lab); } catch (x: any) { setMsg(x.message || "Something went wrong. Your draft is unchanged."); }
+    try { const t = await call("passage", ins); setPrev(draft); const nt = draft.slice(0, s) + t + draft.slice(e); setDraft(nt); onClear(); await saveVer(nt, lab); onSaved?.(); } catch (x: any) { setMsg(x.message || "Something went wrong. Your draft is unchanged."); }
     setBusy(false);
   };
   const explain = async () => { setBusy(true); setMsg(""); try { setWhy(await call("explain", "Explain this section")); } catch (x: any) { setMsg(x.message || "Something went wrong."); } setBusy(false); };

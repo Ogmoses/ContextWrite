@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { sb } from "@/lib/supabase/browser";
 type V = { id: string; version_number: number; name: string | null; content: string; created_at: string };
 function diff(a: string, b: string) {
@@ -13,13 +13,14 @@ function diff(a: string, b: string) {
   while (j < m) out.push(["+", y[j++]]);
   return out;
 }
-export default function Versions({ projectId, current, onRestore }: { projectId: string; current: string; onRestore: (t: string) => void }) {
+export default function Versions({ projectId, current, onRestore, tick = 0 }: { projectId: string; current: string; onRestore: (t: string) => void; tick?: number }) {
   const [open, setOpen] = useState(false), [vs, setVs] = useState<V[]>([]), [sel, setSel] = useState<string[]>([]), [msg, setMsg] = useState(""), [busy, setBusy] = useState(false);
   const load = async () => { const { data } = await sb().from("drafts").select("id,version_number,name,content,created_at").eq("project_id", projectId).order("version_number", { ascending: false }); setVs((data as V[]) || []); return (data as V[]) || []; };
   const add = async (content: string, name: string) => {
     const c = sb(); const { data: l } = await c.from("drafts").select("version_number").eq("project_id", projectId).order("version_number", { ascending: false }).limit(1);
     const { error } = await c.from("drafts").insert({ project_id: projectId, version_number: (l?.[0]?.version_number || 0) + 1, name, content }); if (error) throw error;
   };
+  useEffect(() => { if (open) load(); }, [tick]);
   const run = async (fn: () => Promise<void>) => { setBusy(true); setMsg(""); try { await fn(); } catch { setMsg("Couldn't save. Your text is still in the editor. Try again."); } setBusy(false); };
   const toggle = async () => { if (!open) await load(); setOpen(!open); };
   const saveNow = () => run(async () => { const l = await load(); if (l[0]?.content === current) return setMsg("This text is already saved as v" + l[0].version_number + "."); await add(current, "Manual edit"); await load(); setMsg("Saved as a new version."); });
